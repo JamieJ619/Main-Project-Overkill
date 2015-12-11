@@ -29,11 +29,9 @@
 #include "Tile.h"
 #include "Enemy.h"
 #include "CollisonManager.h"
+#include "SoundManager.h"
 
-//#pragma comment(lib,"fmodex_vc.lib")
-#include "fmod.hpp"
-#include "fmod_errors.h"
-//put this in liker input -> 'fmod_vc.lib'
+
 
 // Variables
 //////////////////
@@ -44,6 +42,7 @@ sf::Texture m_tex2;
 sf::Texture m_hud;
 Player player;
 BulletManager bulletManager2012;
+SoundManager soundManager2014;
 sf::Sprite sprHud;
 
 //Menu Stuff
@@ -129,6 +128,8 @@ StateJob m_currentState = StateJob::MAIN_MENU;
 
 void initGame()
 {
+
+	soundManager2014.PlayGameMusic();
 	texEnemy.loadFromFile("ZombieTest.png");
 	sprEnemy.setTexture(texEnemy);
 	em1 = Enemy(sprEnemy, sf::Vector2f(400, 250), 2);
@@ -382,7 +383,9 @@ void initMenu()
 	quitGameImage.loadFromFile("QuitGame.png");
 	settingsImage.loadFromFile("Settings.png");
 	cursorImage.loadFromFile("cursor.png");
-
+	soundManager2014 = SoundManager();
+	soundManager2014.Inititialise();
+	soundManager2014.PlayBackgroundMusic();
 	cursorPosition = sf::Vector2f(50, 500);
 }
 void DrawMenu(sf::RenderWindow & p_window)
@@ -485,6 +488,7 @@ void DrawSettings(sf::RenderWindow & p_window)
 
 void Update()
 {
+	soundManager2014.Update();
 	timer += deltaTime.asSeconds();
 	deltaTime = myClock.getElapsedTime();
 	myClock.restart();
@@ -497,6 +501,8 @@ void Update()
 	{
 	case IN_GAME:
 		//doing game stuff
+		soundManager2014.StopSound();
+		soundManager2014.PlayGameMusic();
 		if (player.GetAlive() == true)
 		{
 			player.Update(deltaTime);
@@ -621,7 +627,8 @@ int main()
 		{
 			m_currentState = StateJob::MAIN_MENU;
 		}
-		if (sf::Joystick::isButtonPressed(0, 5)) //"RB" button on the XBox 360 controller
+
+		if (sf::Joystick::isButtonPressed(0, 5) && m_currentState == StateJob::IN_GAME) //"RB" button on the XBox 360 controller
 		{
 			sf::Vector2f temp;
 			float angle = player.getAngle();
@@ -633,6 +640,7 @@ int main()
 				{
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
+					soundManager2014.PlayBulletSound();
 					timer = 0;
 				}
 					
@@ -641,6 +649,7 @@ int main()
 					bulletCount = 0;
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
+					soundManager2014.PlayBulletSound();
 				}			
 			}				
 		}
