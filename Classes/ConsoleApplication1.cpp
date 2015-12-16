@@ -89,6 +89,7 @@ sf::Texture settingsScreenImage;
 /////////////////////////////////////
 
 float timer = 0;
+float otherTimer = 0;
 int bulletCount = 0;
 sf::IntRect m_spriteRect;
 const float BULLETDELAY = 0.3f;
@@ -114,8 +115,13 @@ sf::Texture texMaze;
 
 Tile tileMap[16][16];
 
+bool soundEffectsEnabled = true;
+bool backgroundMusicEnabled = true;
+bool reloadingSound = true;
+bool pressBtn = false;
 
-
+bool pressedLastFrame = false;
+bool pressedLastFrame1 = false;
 
 enum StateJob
 {
@@ -129,7 +135,7 @@ StateJob m_currentState = StateJob::MAIN_MENU;
 void initGame()
 {
 
-	soundManager2014.PlayGameMusic();
+	//soundManager2014.PlayGameMusic();
 	texEnemy.loadFromFile("ZombieTest.png");
 	sprEnemy.setTexture(texEnemy);
 	em1 = Enemy(sprEnemy, sf::Vector2f(400, 250), 2);
@@ -295,7 +301,7 @@ void UpdateMap()
 		}
 	}
 
-	CollisonManager::CheckWalleyJobs(&player, &wallRect);
+	//CollisonManager::CheckWalleyJobs(&player, &wallRect);
 	
 	
 #pragma endregion Map
@@ -488,7 +494,7 @@ void DrawSettings(sf::RenderWindow & p_window)
 
 void Update()
 {
-	soundManager2014.Update();
+	
 	timer += deltaTime.asSeconds();
 	deltaTime = myClock.getElapsedTime();
 	myClock.restart();
@@ -501,8 +507,7 @@ void Update()
 	{
 	case IN_GAME:
 		//doing game stuff
-		soundManager2014.StopSound();
-		soundManager2014.PlayGameMusic();
+
 		if (player.GetAlive() == true)
 		{
 			player.Update(deltaTime);
@@ -523,7 +528,7 @@ void Update()
 
 		break;
 	}
-	
+	soundManager2014.Update(player.getPosition(), player.getVelocity());
 }
 // DRAW EVENT
 /////////////////////////////
@@ -607,29 +612,84 @@ int main()
 
 			
 		}
-		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == quitGame) //"RB" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 6)) //"Back" button on the XBox 360 controller
+		{
+			if (soundEffectsEnabled == true && pressedLastFrame1 == false)
+			{
+				soundEffectsEnabled = false;
+			}
+			else if (pressedLastFrame1 == false && soundEffectsEnabled == false)
+				soundEffectsEnabled = true;
+
+		}
+		else
+			pressedLastFrame1 = false;
+
+		if (sf::Joystick::isButtonPressed(0, 7)) //"Start" button on the XBox 360 controller
+		{
+			if (backgroundMusicEnabled == true && pressedLastFrame == false)
+			{
+				soundManager2014.PauseMusic();
+				backgroundMusicEnabled = false;
+			}
+			else if (pressedLastFrame == false && backgroundMusicEnabled == false)
+			{
+				soundManager2014.UnPauseMusic();
+				backgroundMusicEnabled = true;
+			}
+
+			pressedLastFrame = true;
+
+		}
+		else
+			pressedLastFrame = false;
+
+
+		if (sf::Joystick::isButtonPressed(0, 3) && selectedButton == newGame) //"Y" button on the XBox 360 controller
+		{
+			if (soundManager2014.enable3dAudio == true)
+			{
+				soundManager2014.enable3dAudio = false;
+				soundManager2014.dopplerEnabaled = false;
+			}
+				
+			
+			else if (soundManager2014.enable3dAudio == false)
+			{
+				soundManager2014.enable3dAudio = true;
+				soundManager2014.dopplerEnabaled = true;
+
+			}
+				
+		}
+
+		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == quitGame) //"A" button on the XBox 360 controller
 		{
 			window.close();
 		}
-		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == newGame) //"RB" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == newGame) //"A" button on the XBox 360 controller
 		{
+			soundManager2014.StopSound();
+			soundManager2014.PlayZombieSound();
 			m_currentState = StateJob::IN_GAME;
+			pressBtn = true;
 		}
-		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == settings) //"RB" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == settings) //"A" button on the XBox 360 controller
 		{
 			m_currentState = StateJob::SETTINGS;
 		}
-		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == loadGame) //"RB" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == loadGame) //"A" button on the XBox 360 controller
 		{
 			m_currentState = StateJob::IN_GAME;
 		}
-		if (sf::Joystick::isButtonPressed(0, 1) && m_currentState == StateJob::SETTINGS) //"RB" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 1) && m_currentState == StateJob::SETTINGS) //"B" button on the XBox 360 controller
 		{
 			m_currentState = StateJob::MAIN_MENU;
 		}
 
 		if (sf::Joystick::isButtonPressed(0, 5) && m_currentState == StateJob::IN_GAME) //"RB" button on the XBox 360 controller
 		{
+
 			sf::Vector2f temp;
 			float angle = player.getAngle();
 			temp = sf::Vector2f(cos(angle), sin(angle));
@@ -640,19 +700,38 @@ int main()
 				{
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
-					soundManager2014.PlayBulletSound();
+					if (soundEffectsEnabled && pressedLastFrame1 == false)
+					{
+						soundManager2014.PlayBulletSound();
+					}
+
 					timer = 0;
+					reloadingSound = true;
 				}
-					
+
 				else if (timer > RELOADDELAY)
 				{
 					bulletCount = 0;
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
-					soundManager2014.PlayBulletSound();
-				}			
-			}				
+					if (soundEffectsEnabled && pressedLastFrame1 == false)
+					{
+						soundManager2014.PlayBulletSound();
+					}
+				}
+
+				else if (timer < RELOADDELAY && soundEffectsEnabled)
+				{
+					if (reloadingSound == true)
+					{
+						soundManager2014.PlayReloadSound();
+						reloadingSound = false;
+					}
+
+				}
+			}
 		}
+
 	
 		//prepare frame
 		window.clear();

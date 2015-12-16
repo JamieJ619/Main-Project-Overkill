@@ -23,6 +23,7 @@ public:
 	void Update(sf::Time p_deltaTime);
 
 	sf::Vector2f getPosition();
+	sf::Vector2f getVelocity();
 	float getAngle();
 	sf::Sprite getSprite();
 	void Shoot(int);
