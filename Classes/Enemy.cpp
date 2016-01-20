@@ -12,12 +12,14 @@ Enemy::Enemy(sf::Sprite p_spr, sf::Vector2f p_position, float p_velocity)
 	m_position = p_position;
 	m_sprite.setPosition(m_position);
 	m_velocity = p_velocity;
+	m_alive = true;
 	//m_angle = 0;
 	//m_sprite.setRotation(m_angle);
 }
 
 Enemy::~Enemy()
 {
+	
 }
 
 sf::Sprite Enemy::GetSprite()
@@ -56,9 +58,17 @@ void Enemy::update(sf::Vector2f p_targetPos, sf::Time p_deltaTime)
 	{
 		m_position.y -= m_velocity * temp;
 	}
-	m_angle = atan2(p_targetPos.x, p_targetPos.y);
-	float tempAngle = m_angle;
-	tempAngle *= 360;  // its close to being exact think may be my size of the enemy sprite too big 
+	m_angle = -atan2(m_position.x - p_targetPos.x, m_position.y - p_targetPos.y);
 	m_sprite.setPosition(m_position);
-	m_sprite.setRotation(tempAngle);
+	m_sprite.setRotation(m_angle * 57.2957795);   // converting from radians to degrees
+}
+
+bool Enemy::GetAlive()
+{
+	return m_alive;
+}
+
+void Enemy::SetAlive(bool p_alive)
+{
+	m_alive = p_alive;
 }

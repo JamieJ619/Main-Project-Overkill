@@ -30,7 +30,8 @@ public:
 	bool GetAlive();
 	void SetAlive(bool);
 	void SetPosition(sf::Vector2f);
-	sf::IntRect GetRectum();
+
+
 private:
 	float m_delay;
 	sf::Vector2f m_origin;
@@ -40,11 +41,7 @@ private:
 	int m_width;
 	int m_height;
 	float m_angle;
-	float m_radiusForAngle;
-	int m_numberOfTowers;
-
 	bool m_alive;
-
 
 	sf::Vector2f m_position;
 	sf::Vector2f m_velocity;

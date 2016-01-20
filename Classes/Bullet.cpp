@@ -20,8 +20,7 @@ void Bullet::Update(sf::Time p_deltaTime)
 {
 	m_position += (m_velocity *  1000.0f) * p_deltaTime.asSeconds();
 	m_sprite.setPosition(m_position);
-
-	
+	bulletRectangle = sf::IntRect(m_position.x, m_position.y, 6, 6);
 }
 void Bullet::Rotate(float speed)
 {
@@ -41,4 +40,9 @@ sf::Sprite Bullet::GetSprite()
 sf::Vector2f Bullet::GetPosition()
 {
 	return m_position;
+}
+
+sf::IntRect Bullet::GetBulletRectangle()
+{
+	return bulletRectangle;
 }

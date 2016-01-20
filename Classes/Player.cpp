@@ -30,7 +30,6 @@ Player::~Player()
 
 void Player::Update(sf::Time p_deltaTime)
 {
-
 	m_delay -= p_deltaTime.asSeconds();
 
 	//Check state of joystick Analog A
@@ -38,13 +37,9 @@ void Player::Update(sf::Time p_deltaTime)
 
 	if (XboxController::Instance().m_leftStickEnabled)
 	{
-		// Origin of SpaceShip
-
-
 		m_velocity = XboxController::Instance().GetLeftStickAxis() * m_speed * p_deltaTime.asSeconds();
 		m_position += m_velocity;
 		m_playerSprite.setPosition(m_position);
-
 	}
 	if (XboxController::Instance().m_rightStickEnabled)
 	{
@@ -55,14 +50,7 @@ void Player::Update(sf::Time p_deltaTime)
 
 		// Sets your angle
 		m_playerSprite.setRotation(temp);
-
 	}
-
-
-	
-	m_playerSprite.setPosition(m_position);
-	m_spriteRect = sf::IntRect(m_position.x, m_position.y, m_playerSprite.getTextureRect().width, m_playerSprite.getTextureRect().height);
-
 }
 
 // Getters
@@ -76,7 +64,6 @@ sf::Vector2f Player::getVelocity()
 {
 	return m_velocity;
 }
-
 
 sf::Sprite Player::getSprite()
 {
@@ -104,11 +91,4 @@ void Player::SetAlive(bool p_alive)
 void Player::SetPosition(sf::Vector2f p_setPos)
 {
 	m_position = p_setPos;
-	m_playerSprite.setPosition(m_position);
-	m_spriteRect = sf::IntRect(m_position.x, m_position.y, m_playerSprite.getTextureRect().width, m_playerSprite.getTextureRect().height);
-}
-
-sf::IntRect Player::GetRectum()
-{
-	return m_spriteRect;
 }

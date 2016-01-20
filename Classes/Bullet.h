@@ -13,10 +13,13 @@ public:
 	sf::Vector2f GetScreenCoordinates();
 	void Rotate(float speed);
 	sf::Vector2f GetPosition();
+	sf::IntRect GetBulletRectangle();
+	sf::IntRect bulletRectangle;
 private:
 	sf::Vector2f m_velocity;
 	sf::Vector2f m_position;
 	sf::Texture m_texture;
 	sf::Sprite m_sprite;
+	bool m_alive;
 };
 

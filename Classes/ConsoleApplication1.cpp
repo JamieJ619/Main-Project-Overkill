@@ -28,7 +28,6 @@
 #include "BulletManager.h"
 #include "Tile.h"
 #include "Enemy.h"
-#include "CollisonManager.h"
 #include "SoundManager.h"
 
 
@@ -42,9 +41,49 @@ sf::Texture m_tex2;
 sf::Texture m_hud;
 Player player;
 BulletManager bulletManager2012;
-SoundManager soundManager2014;
 sf::Sprite sprHud;
+sf::Sprite sprMaze;
+float timer = 0;
+int bulletCount = 0;
+sf::IntRect m_spriteRect;
+const float BULLETDELAY = 0.3f;
+const float RELOADDELAY = 2.5f;
 
+bool pushRight = false;
+bool pushUp = false;
+
+Tile tileMap[16][16];
+Enemy em1, em2, em3, em4;
+
+enum GameStates{ menuState, gameSettings, playGameState };
+
+GameStates currentState = GameStates::menuState;
+
+SoundManager soundManager2014;
+
+sf::Sprite sprCursor;
+sf::IntRect m_cursorRect;
+sf::Texture cursorImage;
+sf::Vector2f cursorPosition;
+
+bool soundEffectsEnabled = true;
+bool backgroundMusicEnabled = true;
+bool reloadingSound = true;
+bool pressBtn = false;
+
+bool pressedLastFrame = false;
+bool pressedLastFrame1 = false;
+
+int selectedButton = 1;
+int newGame = 1;
+int loadGame = 2;
+int quitGame = 3;
+int settings = 4;
+float delay = 0;
+//Settings Stuff
+sf::Sprite sprSettingsScreen;
+sf::IntRect m_settingsScreenRect;
+sf::Texture settingsScreenImage;
 //Menu Stuff
 sf::Sprite sprMenu;
 sf::IntRect m_menuRect;
@@ -66,334 +105,10 @@ sf::Sprite sprSettings;
 sf::IntRect m_settingsRect;
 sf::Texture settingsImage;
 
-sf::Sprite sprCursor;
-sf::IntRect m_cursorRect;
-sf::Texture cursorImage;
-sf::Vector2f cursorPosition;
 
-int selectedButton = 1;
-int newGame = 1;
-int loadGame = 2;
-int quitGame = 3;
-int settings = 4;
+std::vector<Enemy> enemyList;
 
-float delay = 0;
-/////////////////////////////////
-
-//Settings Stuff
-sf::Sprite sprSettingsScreen;
-sf::IntRect m_settingsScreenRect;
-sf::Texture settingsScreenImage;
-
-
-/////////////////////////////////////
-
-float timer = 0;
-float otherTimer = 0;
-int bulletCount = 0;
-sf::IntRect m_spriteRect;
-const float BULLETDELAY = 0.3f;
-const float RELOADDELAY = 2.5f;
-Enemy em1;
-Enemy em2;
-Enemy em3;
-bool emAlive1 = true;
-bool emAlive2 = true;
-bool emAlive3 = true;
-sf::Sprite sprEnemy;
-sf::Texture texEnemy;
-sf::Vector2f playerCurrentPos;
-sf::IntRect playerRect(player.getPosition().x - 13, player.getPosition().y - 13, 26, 26);  // size of player texture
-
-sf::Sprite sprWall;
-sf::Texture texWall;
-sf::Sprite sprBarrier;
-sf::Texture texBarrier;
-sf::Sprite sprMaze;
-sf::Texture texMaze;
-
-
-Tile tileMap[16][16];
-
-bool soundEffectsEnabled = true;
-bool backgroundMusicEnabled = true;
-bool reloadingSound = true;
-bool pressBtn = false;
-
-bool pressedLastFrame = false;
-bool pressedLastFrame1 = false;
-
-enum StateJob
-{
-	MAIN_MENU,
-	SETTINGS,
-	IN_GAME,
-};
-
-StateJob m_currentState = StateJob::MAIN_MENU;
-
-void initGame()
-{
-
-	//soundManager2014.PlayGameMusic();
-	texEnemy.loadFromFile("ZombieTest.png");
-	sprEnemy.setTexture(texEnemy);
-	em1 = Enemy(sprEnemy, sf::Vector2f(400, 250), 2);
-	em2 = Enemy(sprEnemy, sf::Vector2f(200, 350), 2);
-	em3 = Enemy(sprEnemy, sf::Vector2f(250, 100), 2);
-	
-}
-
-void DrawMap(sf::RenderWindow &p_window)
-{
-	texWall.loadFromFile("WallTest.png");
-	sprWall.setTexture(texWall);
-
-	texBarrier.loadFromFile("Barrier.png");
-	sprBarrier.setTexture(texBarrier);
-
-	texMaze.loadFromFile("MazeTest.png");
-	sprMaze.setTexture(texMaze);
-
-
-	for (int i = 0; i < 16; i++)
-	{
-		for (int j = 0; j < 16; j++)
-		{
-			if (tileMap[i][j].tex == Tile::m_texture::MAZE)
-			{
-				p_window.draw(tileMap[i][j].GetSprite());
-			}
-			else if (tileMap[i][j].tex == Tile::m_texture::BARRIER)
-			{
-				tileMap[i][j] = Tile(sprBarrier, sf::Vector2f(50 * i, 50 * j));
-				p_window.draw(tileMap[i][j].GetSprite());
-			}
-			else if (tileMap[i][j].tex == Tile::m_texture::GROUND)
-			{
-				tileMap[i][j] = Tile(sprWall, sf::Vector2f(50 * i, 50 * j));
-				p_window.draw(tileMap[i][j].GetSprite());
-			}
-
-		}
-	}
-}
-void UpdateMap()
-{
-#pragma region Map
-	for (int i = 0; i < 16; i++)
-	{
-		for (int j = 0; j < 16; j++)
-		{
-			tileMap[i][j] = Tile(sprMaze, sf::Vector2f(50 * i, 50 * j));
-		}
-	}
-
-	/////////////////////////////////////////////////////////
-	//	Left Side Wall
-	tileMap[0][0].tex = Tile::m_texture::MAZE;
-	tileMap[0][1].tex = Tile::m_texture::MAZE;
-	tileMap[0][2].tex = Tile::m_texture::MAZE;
-	tileMap[0][3].tex = Tile::m_texture::MAZE;
-	tileMap[0][4].tex = Tile::m_texture::MAZE;
-	tileMap[0][5].tex = Tile::m_texture::MAZE;
-	tileMap[0][6].tex = Tile::m_texture::MAZE;
-	tileMap[0][7].tex = Tile::m_texture::MAZE;
-	tileMap[0][8].tex = Tile::m_texture::MAZE;
-	tileMap[0][9].tex = Tile::m_texture::MAZE;
-	tileMap[0][10].tex = Tile::m_texture::MAZE;
-	tileMap[0][11].tex = Tile::m_texture::MAZE;
-
-	/////////////////////////////////////////////////////////
-	//	Bottom Wall
-	tileMap[1][11].tex = Tile::m_texture::MAZE;
-	tileMap[2][11].tex = Tile::m_texture::MAZE;
-	tileMap[3][11].tex = Tile::m_texture::MAZE;
-	tileMap[4][11].tex = Tile::m_texture::MAZE;
-	tileMap[5][11].tex = Tile::m_texture::MAZE;
-	tileMap[6][11].tex = Tile::m_texture::MAZE;
-	tileMap[7][11].tex = Tile::m_texture::MAZE;
-	tileMap[8][11].tex = Tile::m_texture::MAZE;
-	tileMap[9][11].tex = Tile::m_texture::MAZE;
-	tileMap[10][11].tex = Tile::m_texture::MAZE;
-	tileMap[11][11].tex = Tile::m_texture::MAZE;
-	tileMap[12][11].tex = Tile::m_texture::MAZE;
-	tileMap[13][11].tex = Tile::m_texture::MAZE;
-	tileMap[14][11].tex = Tile::m_texture::MAZE;
-	tileMap[15][11].tex = Tile::m_texture::MAZE;
-
-	/////////////////////////////////////////////////////////
-	//	Top Wall
-	tileMap[1][0].tex = Tile::m_texture::MAZE;
-	tileMap[2][0].tex = Tile::m_texture::MAZE;
-	tileMap[3][0].tex = Tile::m_texture::MAZE;
-	tileMap[4][0].tex = Tile::m_texture::MAZE;
-	tileMap[5][0].tex = Tile::m_texture::MAZE;
-	tileMap[6][0].tex = Tile::m_texture::MAZE;
-	tileMap[7][0].tex = Tile::m_texture::MAZE;
-	tileMap[8][0].tex = Tile::m_texture::MAZE;
-	tileMap[9][0].tex = Tile::m_texture::MAZE;
-	tileMap[10][0].tex = Tile::m_texture::MAZE;
-	tileMap[11][0].tex = Tile::m_texture::MAZE;
-	tileMap[12][0].tex = Tile::m_texture::MAZE;
-	tileMap[13][0].tex = Tile::m_texture::MAZE;
-	tileMap[14][0].tex = Tile::m_texture::MAZE;
-	tileMap[15][0].tex = Tile::m_texture::MAZE;
-
-	/////////////////////////////////////////////////////////
-	//	Maze Bit
-	tileMap[3][1].tex = Tile::m_texture::MAZE;
-	tileMap[3][2].tex = Tile::m_texture::MAZE;
-	tileMap[3][3].tex = Tile::m_texture::MAZE;
-	tileMap[3][4].tex = Tile::m_texture::MAZE;
-	tileMap[3][5].tex = Tile::m_texture::MAZE;
-	tileMap[3][6].tex = Tile::m_texture::MAZE;
-
-	//
-	tileMap[1][9].tex = Tile::m_texture::BARRIER;
-	tileMap[2][9].tex = Tile::m_texture::BARRIER;
-	tileMap[3][9].tex = Tile::m_texture::BARRIER;
-	tileMap[4][9].tex = Tile::m_texture::BARRIER;
-	tileMap[5][9].tex = Tile::m_texture::BARRIER;
-	tileMap[6][9].tex = Tile::m_texture::BARRIER;
-
-	//
-	tileMap[7][8].tex = Tile::m_texture::MAZE;
-	tileMap[7][7].tex = Tile::m_texture::MAZE;
-	tileMap[8][6].tex = Tile::m_texture::MAZE;
-	tileMap[9][6].tex = Tile::m_texture::MAZE;
-	tileMap[10][6].tex = Tile::m_texture::MAZE;
-	tileMap[11][6].tex = Tile::m_texture::MAZE;
-
-	//
-	tileMap[11][5].tex = Tile::m_texture::MAZE;
-	tileMap[11][4].tex = Tile::m_texture::MAZE;
-	tileMap[11][3].tex = Tile::m_texture::MAZE;
-	tileMap[11][2].tex = Tile::m_texture::MAZE;
-
-	//	
-	tileMap[15][5].tex = Tile::m_texture::MAZE;
-	tileMap[15][4].tex = Tile::m_texture::MAZE;
-	tileMap[15][3].tex = Tile::m_texture::MAZE;
-	tileMap[15][2].tex = Tile::m_texture::MAZE;
-	tileMap[15][1].tex = Tile::m_texture::MAZE;
-
-	//
-	tileMap[12][9].tex = Tile::m_texture::MAZE;
-	tileMap[12][10].tex = Tile::m_texture::MAZE;
-	tileMap[12][12].tex = Tile::m_texture::MAZE;
-	tileMap[12][13].tex = Tile::m_texture::MAZE;
-
-	std::vector<sf::IntRect> wallRect;
-
-	for (int i = 0; i < 16; i++)
-	{
-		for (int j = 0; j < 16; j++)
-		{
-			if (tileMap[i][j].tex != Tile::m_texture::BARRIER && tileMap[i][j].tex != Tile::m_texture::MAZE)
-			{
-				tileMap[i][j].tex = Tile::m_texture::GROUND;
-			}
-			if (tileMap[i][j].tex != Tile::m_texture::GROUND)
-			{
-				wallRect.push_back(sf::IntRect(i * 50, j * 50, 50, 50));
-			}
-		}
-	}
-
-	//CollisonManager::CheckWalleyJobs(&player, &wallRect);
-	
-	
-#pragma endregion Map
-}
-
-void UpdateEnemy()
-{
-	sf::IntRect enemyRect1(em1.GetPosition().x, em1.GetPosition().y, 35, 35); // 2nd vector here is the size of the texture
-	sf::IntRect enemyRect2(em2.GetPosition().x, em2.GetPosition().y, 35, 35); // 2nd vector here is the size of the texture
-	sf::IntRect enemyRect3(em3.GetPosition().x, em3.GetPosition().y, 35, 35); // 2nd vector here is the size of the texture
-
-	
-
-	if (emAlive1)
-	{
-		if (playerRect.intersects(enemyRect1) == true)
-		{
-			bool playerDead = false;
-			player.SetAlive(playerDead);
-		}
-	}
-	if (emAlive2)
-	{
-		if (playerRect.intersects(enemyRect2) == true)
-		{
-			bool playerDead = false;
-			player.SetAlive(playerDead);
-		}
-	}
-	if (emAlive3)
-	{
-		if (playerRect.intersects(enemyRect3) == true)
-		{
-			bool playerDead = false;
-			player.SetAlive(playerDead);
-		}
-	}
-	if (bulletManager2012.GetBulletRectangle().intersects(enemyRect1))
-	{
-		emAlive1 = false;
-	}
-	if (bulletManager2012.GetBulletRectangle().intersects(enemyRect2))
-	{
-		emAlive2 = false;
-	}
-	if (bulletManager2012.GetBulletRectangle().intersects(enemyRect3))
-	{
-		emAlive3 = false;
-	}
-	if (emAlive1 == true)
-	{
-		em1.update(playerCurrentPos, deltaTime);
-	}
-	if (emAlive2 == true)
-	{
-		em2.update(playerCurrentPos, deltaTime);
-	}
-	if (emAlive3 == true)
-	{
-		em3.update(playerCurrentPos, deltaTime);
-	}
-}
-void DrawEnemy(sf::RenderWindow &p_window)
-{
-	if (emAlive1 == true)
-	{
-		p_window.draw(em1.GetSprite());
-	}
-	if (emAlive2 == true)
-	{
-		p_window.draw(em2.GetSprite());
-	}
-	if (emAlive3 == true)
-	{
-		p_window.draw(em3.GetSprite());
-	}
-
-}
-
-void initMenu()
-{
-	menuImage.loadFromFile("UnderkillCover.png");
-	newGameImage.loadFromFile("NewGame.png");
-	loadGameImage.loadFromFile("LoadGame.png");
-	quitGameImage.loadFromFile("QuitGame.png");
-	settingsImage.loadFromFile("Settings.png");
-	cursorImage.loadFromFile("cursor.png");
-	soundManager2014 = SoundManager();
-	soundManager2014.Inititialise();
-	soundManager2014.PlayBackgroundMusic();
-	cursorPosition = sf::Vector2f(50, 500);
-}
+// jamie's draw menu method
 void DrawMenu(sf::RenderWindow & p_window)
 {
 	sprMenu.setTexture(menuImage);
@@ -431,8 +146,11 @@ void DrawMenu(sf::RenderWindow & p_window)
 	sprCursor.setPosition(cursorPosition);
 	sprCursor.setScale(0.8, 0.8);
 }
+// jamie's method for updating menu
 void UpdateMenu()
 {
+
+
 
 	delay++;
 	if (sf::Joystick::isButtonPressed(0, 5)) //"RB" button on the XBox 360 controller
@@ -442,7 +160,7 @@ void UpdateMenu()
 			delay = 0;
 			selectedButton++;
 		}
-		
+
 		if (selectedButton > settings)
 		{
 			selectedButton = newGame;
@@ -472,7 +190,7 @@ void UpdateMenu()
 	if (selectedButton == quitGame)
 	{
 		cursorPosition = sf::Vector2f(440, 500);
-		
+
 	}
 	if (selectedButton == settings)
 	{
@@ -480,76 +198,166 @@ void UpdateMenu()
 	}
 }
 
-void initSettings()
-{
-	settingsScreenImage.loadFromFile("settingsBackground.png");
-}
+// jamie's draw settings method
 void DrawSettings(sf::RenderWindow & p_window)
 {
+	// try this here? if not make an init
+	settingsScreenImage.loadFromFile("settingsBackground.png");
+
 	sprSettingsScreen.setTexture(settingsScreenImage);
 	m_settingsScreenRect = sf::IntRect(0, 0, 800, 600);
 	sprSettingsScreen.setTextureRect(m_settingsScreenRect);
 	sprSettingsScreen.setPosition(sf::Vector2f(0, 0));
 }
 
-void Update()
+// Collision between game objects
+///////////////////////////
+void Collisions(sf::RenderWindow &p_window)
 {
-	
-	timer += deltaTime.asSeconds();
-	deltaTime = myClock.getElapsedTime();
-	myClock.restart();
-	playerCurrentPos = player.getPosition();
 
-	// Updates Controller
-	XboxController::Instance().Update(deltaTime);
+	// move the enemy towards the player with a simple position check 
+	// target position taken from player and passed to enemy
+	// this wont be used when pathfinding is implemented
+	sf::Vector2f playerCurrentPos = player.getPosition();
 
-	switch (m_currentState)
+	for (int i = 0; i < enemyList.size(); i++)
 	{
-	case IN_GAME:
-		//doing game stuff
+		sf::IntRect enemyRect(enemyList.at(i).GetPosition().x + 8, enemyList.at(i).GetPosition().y -12, 35, 35); 
+		sf::IntRect playerRect(player.getPosition().x - 8, player.getPosition().y -11, 24, 24);  // size of player texture
 
-		if (player.GetAlive() == true)
+		// enemy collision box, un comment to see
+		sf::RectangleShape rectEm;
+		rectEm.setPosition(sf::Vector2f(enemyRect.left, enemyRect.top));
+		rectEm.setFillColor(sf::Color::Red);
+		rectEm.setSize(sf::Vector2f(24, 24));
+		p_window.draw(rectEm);
+
+		if (enemyList.at(i).GetAlive() == true)
 		{
-			player.Update(deltaTime);
-			bulletManager2012.Update(deltaTime);
-			UpdateMap();
-			UpdateEnemy();
+			if (playerRect.intersects(enemyRect) == true)
+			{
+				bool playerDead = false;
+				player.SetAlive(playerDead);
+			}
 		}
 
-		break;
+		for (int j = 0; j < bulletManager2012.m_bulletList.size(); j++)
+		{
 
-	case MAIN_MENU:
-		UpdateMenu();
-		//updating buttons
-		break;
-
-	case SETTINGS:
-		//doing all the settings
-
-		break;
-	}
-	soundManager2014.Update(player.getPosition(), player.getVelocity());
-}
-// DRAW EVENT
-/////////////////////////////
-void Draw(sf::RenderWindow &p_window)
-{
-	switch (m_currentState)
-	{
-	case IN_GAME:
-		//doing game stuff
+			if (bulletManager2012.m_bulletList.at(j).GetBulletRectangle().intersects(enemyRect))
+			{
+				enemyList.at(i).SetAlive(false);
+				enemyList.erase(enemyList.begin() +i);
+				bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + j);
+			}
+		}
 		
-		if (player.GetAlive() == true)
+		if (enemyList.at(i).GetAlive() == true)
 		{
-			DrawMap(p_window);
-			bulletManager2012.Draw(p_window);
-			p_window.draw(player.getSprite());
-			p_window.draw(sprHud);
+			enemyList.at(i).update(playerCurrentPos, deltaTime);
+			p_window.draw(enemyList.at(i).GetSprite());	
 		}
-		DrawEnemy(p_window);
-		break;
+	
+		
+		for (int i = 0; i < 16; i++)
+		{
+			for (int j = 0; j < 16; j++)
+			{
+				if (tileMap[i][j].tex == Tile::m_texture::MAZE)
+				{
+					sf::IntRect mazeRect(j * 50, i * 50, 50, 50);
+					if (playerRect.intersects(mazeRect))
+					{
+						// check distance from player centre and maze centre
+						//sf::Vector2f mazePos(mazeRect.left, mazeRect.top);
+						//sf::Vector2f mazeCentre(mazePos.x + 25, mazePos.y + 25);
+						//sf::Vector2f playerCentre(player.getPosition().x + 16, player.getPosition().y + 16);
 
-	case MAIN_MENU:
+						
+
+						float distanceX;
+						
+						//distanceX = playerCentre.x - mazePos.x;
+						distanceX = (player.getPosition().x +16) - mazeRect.left;
+						pushRight = false;
+						
+						if (distanceX > 5)  // ie must have been coming from right side to left 
+						{
+							distanceX = playerRect.left - (mazeRect.left + 50);
+							pushRight = true;
+						}
+						if (distanceX < 0)
+						{
+							distanceX = distanceX * -1;   // if negative, multiply by -1 to get a positive value
+						}
+
+						// check x and y seperately
+						float pushBackDistX; // distance between current player and ideal distance , ie distance to push back
+						pushBackDistX = distanceX;
+						
+
+						float distanceY;
+						distanceY = (player.getPosition().y +12) - mazeRect.top;
+						pushUp = false;
+
+						if (distanceY > 5)  // ie must be coming from bottom to top
+						{
+							distanceY = playerRect.top  - (mazeRect.top + 50);
+							pushUp = true;
+						}
+
+
+
+						if (distanceY < 0)
+						{
+							distanceY = distanceY * -1;   // if negative, multipy by -1 to get a positive value
+						}
+
+						float pushBackDistY;
+						pushBackDistY = distanceY;
+
+						if (pushBackDistX < pushBackDistY)
+						{
+							if (pushRight == true)
+							{
+								player.SetPosition(sf::Vector2f(player.getPosition().x + pushBackDistX, player.getPosition().y));  // collide right
+							}
+							else
+							{
+								player.SetPosition(sf::Vector2f(player.getPosition().x - pushBackDistX, player.getPosition().y));  // collide left
+							}
+						}
+
+
+						if (pushBackDistX > pushBackDistY)
+						{
+							if (pushUp == true)
+							{
+								player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y + pushBackDistY));  // collide up
+							}
+							else
+							{
+								player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y - pushBackDistY));  // collide down
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// UPDATE EVENT
+/////////////////////////////
+void Update(sf::RenderWindow &p_window)
+{
+	switch (currentState)
+	{
+
+	case menuState:
+		// update menu
+		UpdateMenu();
+		// draw menu
 		DrawMenu(p_window);
 		p_window.draw(sprMenu);
 		p_window.draw(sprNewGame);
@@ -559,41 +367,220 @@ void Draw(sf::RenderWindow &p_window)
 		p_window.draw(sprCursor);
 		break;
 
-	case SETTINGS:
+	case playGameState:
+		timer += deltaTime.asSeconds();
+		deltaTime = myClock.getElapsedTime();
+		myClock.restart();
+		XboxController::Instance().Update(deltaTime);
+		Collisions(p_window);
+		if (player.GetAlive() == true)
+		{
+			player.Update(deltaTime);
+			bulletManager2012.Update(deltaTime);
+			bulletManager2012.Draw(p_window);
+			p_window.draw(player.getSprite());
+		}
+		break;
+
+	case gameSettings:
+		// update settings
+		// draw settings
 		DrawSettings(p_window);
 		p_window.draw(sprSettingsScreen);
-		//doing all the settings
-
 		break;
 	}
-	
+	soundManager2014.Update(player.getPosition(), player.getVelocity());
 }
+
+// DRAW EVENT
+/////////////////////////////
+void Draw(sf::RenderWindow &p_window)
+{
+	p_window.draw(sprHud);
+}
+
+// Load the first level
+/////////////////////////
+void LoadFirstLevel()
+{
+	
+
+	for (int i = 0; i < 16; i++)
+	{
+		for (int j = 0; j < 16; j++)
+		{
+			tileMap[i][j] = Tile(sprMaze, sf::Vector2f(50 * i, 50 * j));
+		}
+	}
+
+	/////////////////////////////////////////////////////////
+		//	Top  Wall
+		tileMap[0][0].tex = Tile::m_texture::MAZE;
+		tileMap[0][1].tex = Tile::m_texture::MAZE;
+		tileMap[0][2].tex = Tile::m_texture::MAZE;
+		tileMap[0][3].tex = Tile::m_texture::MAZE;
+		tileMap[0][4].tex = Tile::m_texture::MAZE;
+		tileMap[0][5].tex = Tile::m_texture::MAZE;
+		tileMap[0][6].tex = Tile::m_texture::MAZE;
+		tileMap[0][7].tex = Tile::m_texture::MAZE;
+		tileMap[0][8].tex = Tile::m_texture::MAZE;
+		tileMap[0][9].tex = Tile::m_texture::MAZE;
+		tileMap[0][10].tex = Tile::m_texture::MAZE;
+		tileMap[0][11].tex = Tile::m_texture::MAZE;
+		tileMap[0][12].tex = Tile::m_texture::MAZE;
+		tileMap[0][13].tex = Tile::m_texture::MAZE;
+		tileMap[0][14].tex = Tile::m_texture::MAZE;
+		tileMap[0][15].tex = Tile::m_texture::MAZE;
+
+		/////////////////////////////////////////////////////////
+		//	Bottom  Wall
+		tileMap[11][0].tex = Tile::m_texture::MAZE;
+		tileMap[11][1].tex = Tile::m_texture::MAZE;
+		tileMap[11][2].tex = Tile::m_texture::MAZE;
+		tileMap[11][3].tex = Tile::m_texture::MAZE;
+		tileMap[11][4].tex = Tile::m_texture::MAZE;
+		tileMap[11][5].tex = Tile::m_texture::MAZE;
+		tileMap[11][6].tex = Tile::m_texture::MAZE;
+		tileMap[11][7].tex = Tile::m_texture::MAZE;
+		tileMap[11][8].tex = Tile::m_texture::MAZE;
+		tileMap[11][9].tex = Tile::m_texture::MAZE;
+		tileMap[11][10].tex = Tile::m_texture::MAZE;
+		tileMap[11][11].tex = Tile::m_texture::MAZE;
+		tileMap[11][12].tex = Tile::m_texture::MAZE;
+		tileMap[11][13].tex = Tile::m_texture::MAZE;
+		tileMap[11][14].tex = Tile::m_texture::MAZE;
+		tileMap[11][15].tex = Tile::m_texture::MAZE;
+	
+
+		/////////////////////////////////////////////////////////
+		//	Right Wall
+		tileMap[1][15].tex = Tile::m_texture::MAZE;
+		tileMap[2][15].tex = Tile::m_texture::MAZE;
+		tileMap[3][15].tex = Tile::m_texture::MAZE;
+		tileMap[4][15].tex = Tile::m_texture::MAZE;
+		tileMap[5][15].tex = Tile::m_texture::MAZE;
+		tileMap[6][15].tex = Tile::m_texture::MAZE;
+		tileMap[7][15].tex = Tile::m_texture::MAZE;
+		tileMap[8][15].tex = Tile::m_texture::MAZE;
+		tileMap[9][15].tex = Tile::m_texture::MAZE;
+		tileMap[10][15].tex = Tile::m_texture::MAZE;
+		tileMap[11][15].tex = Tile::m_texture::MAZE;
+
+
+		/////////////////////////////////////////////////////////
+		//	Left Wall
+		tileMap[1][0].tex = Tile::m_texture::MAZE;
+		tileMap[2][0].tex = Tile::m_texture::MAZE;
+		tileMap[3][0].tex = Tile::m_texture::MAZE;
+		tileMap[4][0].tex = Tile::m_texture::MAZE;
+		tileMap[5][0].tex = Tile::m_texture::MAZE;
+		tileMap[6][0].tex = Tile::m_texture::MAZE;
+		tileMap[7][0].tex = Tile::m_texture::MAZE;
+		tileMap[8][0].tex = Tile::m_texture::MAZE;
+		tileMap[9][0].tex = Tile::m_texture::MAZE;
+		tileMap[10][0].tex = Tile::m_texture::MAZE;
+		tileMap[11][0].tex = Tile::m_texture::MAZE;
+
+
+		/////////////////////////////////////////////////////////
+		//	Maze Bit
+		tileMap[3][1].tex = Tile::m_texture::MAZE;
+		tileMap[3][2].tex = Tile::m_texture::MAZE;
+		tileMap[3][3].tex = Tile::m_texture::MAZE;
+		tileMap[3][4].tex = Tile::m_texture::MAZE;
+		tileMap[3][5].tex = Tile::m_texture::MAZE;
+		tileMap[3][6].tex = Tile::m_texture::MAZE;
+
+		//
+		tileMap[7][8].tex = Tile::m_texture::MAZE;
+		tileMap[7][7].tex = Tile::m_texture::MAZE;
+		tileMap[8][6].tex = Tile::m_texture::MAZE;
+		tileMap[9][6].tex = Tile::m_texture::MAZE;
+		tileMap[10][6].tex = Tile::m_texture::MAZE;
+		tileMap[11][6].tex = Tile::m_texture::MAZE;
+
+		//
+		tileMap[11][5].tex = Tile::m_texture::MAZE;
+		tileMap[11][4].tex = Tile::m_texture::MAZE;
+		tileMap[11][3].tex = Tile::m_texture::MAZE;
+		tileMap[11][2].tex = Tile::m_texture::MAZE;
+
+		//	
+		tileMap[15][5].tex = Tile::m_texture::MAZE;
+		tileMap[15][4].tex = Tile::m_texture::MAZE;
+		tileMap[15][3].tex = Tile::m_texture::MAZE;
+		tileMap[15][2].tex = Tile::m_texture::MAZE;
+		tileMap[15][1].tex = Tile::m_texture::MAZE;
+
+		//
+		tileMap[12][9].tex = Tile::m_texture::MAZE;
+		tileMap[12][10].tex = Tile::m_texture::MAZE;
+		tileMap[12][12].tex = Tile::m_texture::MAZE;
+		tileMap[12][13].tex = Tile::m_texture::MAZE;
+}
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////
 ///Entrypoint of application 
 //////////////////////////////////////////////////////////// 
 
-
-
 int main()
 {
-	initGame();
-	initMenu();
-	initSettings();
 	m_tex1.loadFromFile("playerWpistol.png");
 	m_tex2.loadFromFile("bullet.png");
 	m_hud.loadFromFile("Game HUD.png");
 	player = Player(*&m_tex1,sf::Vector2f(280, 240));
 	bulletManager2012 = BulletManager(*&m_tex2);
-
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
+
 
 	sprHud.setTexture(m_hud);
 	m_spriteRect = sf::IntRect(0, 0, 800, 600);
 	sprHud.setTextureRect(m_spriteRect);
 	sprHud.setPosition(sf::Vector2f(0,0));
+
+	sf::Sprite sprFloor;
+	sf::Texture texFloor;
+	texFloor.loadFromFile("floor.png");
+	sprFloor.setTexture(texFloor);
+
+	sf::Texture texMaze;
+	texMaze.loadFromFile("MazeTest.png");
+	sprMaze.setTexture(texMaze);
+
+	sf::Sprite sprEnemy;
+	sf::Texture texEnemy;
+	texEnemy.loadFromFile("ZombieTest.png");
+	sprEnemy.setTexture(texEnemy);
+
+	// try put the init in  here..
+	// if it doesn't work put back in initMenu() method
+	menuImage.loadFromFile("UnderkillCover.png");
+	newGameImage.loadFromFile("NewGame.png");
+	loadGameImage.loadFromFile("LoadGame.png");
+	quitGameImage.loadFromFile("QuitGame.png");
+	settingsImage.loadFromFile("Settings.png");
+	cursorImage.loadFromFile("cursor.png");
+	soundManager2014 = SoundManager();
+	soundManager2014.Inititialise();
+	soundManager2014.PlayBackgroundMusic();
+	cursorPosition = sf::Vector2f(50, 500);
+
+	//soundManager2014.PlayGameMusic();  // this was commented out on jamie's edition
+	em1 = Enemy(sprEnemy, sf::Vector2f(400, 250), 2);
+	em2 = Enemy(sprEnemy, sf::Vector2f(600, 250), 2);
+	em3 = Enemy(sprEnemy, sf::Vector2f(500, 150), 2);
+	em4 = Enemy(sprEnemy, sf::Vector2f(50000, 35000), 2);
+	enemyList.push_back(em1);
+	enemyList.push_back(em2);
+	enemyList.push_back(em3);
+	enemyList.push_back(em4);
+
 
 	// Start game loop 
 	while (window.isOpen())
@@ -610,8 +597,8 @@ int main()
 			if ((Event.type == sf::Event::KeyPressed) && (Event.key.code == sf::Keyboard::Escape))
 				window.close();
 
-			
 		}
+
 		if (sf::Joystick::isButtonPressed(0, 6)) //"Back" button on the XBox 360 controller
 		{
 			if (soundEffectsEnabled == true && pressedLastFrame1 == false)
@@ -652,15 +639,15 @@ int main()
 				soundManager2014.enable3dAudio = false;
 				soundManager2014.dopplerEnabaled = false;
 			}
-				
-			
+
+
 			else if (soundManager2014.enable3dAudio == false)
 			{
 				soundManager2014.enable3dAudio = true;
 				soundManager2014.dopplerEnabaled = true;
 
 			}
-				
+
 		}
 
 		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == quitGame) //"A" button on the XBox 360 controller
@@ -671,23 +658,23 @@ int main()
 		{
 			soundManager2014.StopSound();
 			soundManager2014.PlayZombieSound();
-			m_currentState = StateJob::IN_GAME;
+			currentState = GameStates::playGameState;
 			pressBtn = true;
 		}
 		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == settings) //"A" button on the XBox 360 controller
 		{
-			m_currentState = StateJob::SETTINGS;
+			currentState = GameStates::gameSettings;
 		}
 		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == loadGame) //"A" button on the XBox 360 controller
 		{
-			m_currentState = StateJob::IN_GAME;
+			currentState = GameStates::playGameState;
 		}
-		if (sf::Joystick::isButtonPressed(0, 1) && m_currentState == StateJob::SETTINGS) //"B" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 1) && currentState == GameStates::gameSettings) //"B" button on the XBox 360 controller
 		{
-			m_currentState = StateJob::MAIN_MENU;
+			currentState = GameStates::menuState;
 		}
 
-		if (sf::Joystick::isButtonPressed(0, 5) && m_currentState == StateJob::IN_GAME) //"RB" button on the XBox 360 controller
+		if (sf::Joystick::isButtonPressed(0, 5) && currentState == GameStates::playGameState) //"RB" button on the XBox 360 controller
 		{
 
 			sf::Vector2f temp;
@@ -731,12 +718,38 @@ int main()
 				}
 			}
 		}
+	
+
+		//prepare frame
+		// please dont change order these methods are done in 
+
+		window.clear();
+		window.draw(sprFloor);
+		LoadFirstLevel();  // this has to load first before being drawn so keep method before the following draw statement
+		for (int i = 0; i < 16; i++)
+		{
+			for (int j = 0; j < 16; j++)
+			{	
+				if (tileMap[i][j].tex == Tile::m_texture::MAZE)
+				{
+					window.draw(tileMap[j][i].GetSprite());
+				}
+			}
+		}
+		Update(window);  // do collisions after update and before draw
+		Draw(window);
+
+
+		// player's collision box, un comment to see 
+		/*	sf::RectangleShape rect;
+		rect.setPosition(sf::Vector2f(playerRect.left, playerRect.top));
+		rect.setFillColor(sf::Color::Red);
+		rect.setSize(sf::Vector2f(24, 24));
+		window.draw(rect);*/
+
 
 	
-		//prepare frame
-		window.clear();
-		Update();
-		Draw(window);
+
 		// Finally, display rendered frame on screen 
 		window.display();
 
@@ -747,14 +760,14 @@ int main()
 
 
 // Joystick Buttons
-// (0, 0) - A
-// (0, 1) - B
+// (0, 0) - Y
+// (0, 1) - A
 // (0, 2) - X
-// (0, 3) - Y
+// (0, 3) - B
 // (0, 4) - Left Bumper
 // (0, 5) - Right Bumper
-// (0, 6) - Back 
-// (0, 7) - Start 
+// (0, 6) - Back Bumper
+// (0, 7) - Start Bumper
 // (0, 8) - Left Analog Press
 // (0, 9) - Right Analog Press
 

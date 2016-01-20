@@ -16,10 +16,8 @@ public:
 	void AddBullet(sf::Vector2f m_playerPos, sf::Vector2f, sf::Sprite);
 
 	sf::Sprite getSprite();
-	sf::IntRect bulletRectangle;
-	sf::IntRect GetBulletRectangle();
+	std::vector<Bullet> m_bulletList;
 
 private:
-	std::vector<Bullet> m_bulletList;
 	sf::Sprite m_sprite;
 };

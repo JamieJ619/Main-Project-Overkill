@@ -31,7 +31,7 @@ void BulletManager::Update(sf::Time p_deltaTime)
 	for (int i = 0; i < m_bulletList.size(); i++)
 	{
 		m_bulletList.at(i).Update(p_deltaTime);
-		bulletRectangle = sf::IntRect(m_bulletList.at(i).GetPosition().x, m_bulletList.at(i).GetPosition().y, 6, 6);
+		
 		if (m_bulletList.at(i).GetScreenCoordinates().x > 800)
 		{
 			m_bulletList.erase(m_bulletList.begin() + i);
@@ -56,7 +56,4 @@ sf::Sprite BulletManager::getSprite()
 {
 	return m_sprite;
 }
-sf::IntRect BulletManager::GetBulletRectangle()
-{
-	return bulletRectangle;
-}
+

@@ -33,6 +33,11 @@ void Tile::SetSprite(sf::Sprite p_spr)
 	m_sprite = p_spr;
 }
 
+void Tile::loadLevelOne()
+{
+
+}
+
 Tile::~Tile()
 {
 }

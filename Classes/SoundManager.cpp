@@ -22,7 +22,7 @@ void SoundManager::Inititialise()
 	FMODsys->createSound("pistolSound.mp3", FMOD_DEFAULT, 0, &bulletSound);
 	FMODsys->createSound("reload.wav", FMOD_DEFAULT, 0, &reloadSound);
 
-	FMODsys->createStream("backgroundMusic1.wav", FMOD_LOOP_NORMAL | FMOD_3D, 0, &zombieSound);
+	FMODsys->createStream("test.mp3", FMOD_LOOP_NORMAL | FMOD_3D, 0, &zombieSound);
 
 	FMODsys->createStream("backgroundMusic.wav", FMOD_DEFAULT, 0, &backgroundMusic);
 	backgroundMusic->setMode(FMOD_LOOP_NORMAL);

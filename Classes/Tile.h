@@ -9,14 +9,17 @@ public:
 	Tile(sf::Sprite, sf::Vector2f);
 	~Tile();
 
-	enum m_texture{ MAZE, GROUND, BARRIER };
+	enum m_texture{ MAZE, GROUND};
 	m_texture tex;
+
 
 
 	sf::Sprite GetSprite();
 	sf::Vector2f GetPosition();
 	void SetPosition(sf::Vector2f);
 	void SetSprite(sf::Sprite);
+
+	void loadLevelOne();
 
 private:
 	sf::Sprite m_sprite;

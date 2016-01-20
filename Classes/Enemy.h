@@ -17,11 +17,14 @@ public:
 	sf::Vector2f GetPosition();
 	void SetPosition(sf::Vector2f);
 	void update(sf::Vector2f p_targetPos, sf::Time);
+	bool GetAlive();
+	void SetAlive(bool p_alive);
 
 private:
 	sf::Sprite m_sprite;
 	sf::Vector2f m_position;
 	float  m_velocity;
 	float m_angle;
+	bool m_alive;
 };
 
