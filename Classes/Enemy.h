@@ -26,5 +26,6 @@ private:
 	float  m_velocity;
 	float m_angle;
 	bool m_alive;
+	bool canMoveUp, canMoveDown, canMoveRight, canMoveLeft;
 };
 

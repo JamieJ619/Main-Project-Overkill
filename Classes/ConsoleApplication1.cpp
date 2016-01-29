@@ -321,7 +321,6 @@ void Collisions(sf::RenderWindow &p_window)
 									player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y - pushBackDistY));  // collide down
 								}
 							}
-							
 						}
 					}
 				}
@@ -520,7 +519,8 @@ void LoadFirstLevel()
 		tileMap[5][2].tex = Tile::m_texture::MAZE;
 
 		tileMap[8][2].tex = Tile::m_texture::MAZE;
-		tileMap[9][3].tex = Tile::m_texture::MAZE;
+		tileMap[9][2].tex = Tile::m_texture::MAZE;
+		tileMap[10][3].tex = Tile::m_texture::MAZE;
 		tileMap[10][4].tex = Tile::m_texture::MAZE;
 
 		tileMap[3][4].tex = Tile::m_texture::MAZE;
@@ -619,9 +619,9 @@ int main()
 	cursorPosition = sf::Vector2f(50, 500);
 
 	//soundManager2014.PlayGameMusic();  // this was commented out on jamie's edition
-	em1 = Enemy(sprEnemy, sf::Vector2f(400, 250), 2);
-	em2 = Enemy(sprEnemy, sf::Vector2f(600, 250), 2);
-	em3 = Enemy(sprEnemy, sf::Vector2f(500, 150), 2);
+	em1 = Enemy(sprEnemy, sf::Vector2f(650, 480), 10);
+	em2 = Enemy(sprEnemy, sf::Vector2f(250, 480), 20);
+	em3 = Enemy(sprEnemy, sf::Vector2f(160, 480), 26);
 	em4 = Enemy(sprEnemy, sf::Vector2f(50000, 35000), 2);
 	enemyList.push_back(em1);
 	enemyList.push_back(em2);
