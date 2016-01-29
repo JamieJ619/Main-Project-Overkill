@@ -36,13 +36,14 @@
 //////////////////
 sf::Clock myClock;
 sf::Time deltaTime;
-sf::Texture m_tex1;
-sf::Texture m_tex2;
+sf::Texture m_playerTex;
+sf::Texture m_bulletTex;
 sf::Texture m_hud;
 Player player;
 BulletManager bulletManager2012;
 sf::Sprite sprHud;
 sf::Sprite sprMaze;
+sf::Sprite sprEnd;
 float timer = 0;
 int bulletCount = 0;
 sf::IntRect m_spriteRect;
@@ -105,6 +106,9 @@ sf::Sprite sprSettings;
 sf::IntRect m_settingsRect;
 sf::Texture settingsImage;
 
+sf::Sprite sprControls;
+sf::IntRect m_controlsRect;
+sf::Texture controlsTex;
 
 std::vector<Enemy> enemyList;
 
@@ -134,6 +138,8 @@ void DrawMenu(sf::RenderWindow & p_window)
 	sprQuitGame.setPosition(sf::Vector2f(420, 450));
 	sprQuitGame.setScale(0.8, 0.8);
 
+	
+
 	sprSettings.setTexture(settingsImage);
 	m_settingsRect = sf::IntRect(0, 0, 190, 60);
 	sprSettings.setTextureRect(m_menuRect);
@@ -149,9 +155,6 @@ void DrawMenu(sf::RenderWindow & p_window)
 // jamie's method for updating menu
 void UpdateMenu()
 {
-
-
-
 	delay++;
 	if (sf::Joystick::isButtonPressed(0, 5)) //"RB" button on the XBox 360 controller
 	{
@@ -203,11 +206,17 @@ void DrawSettings(sf::RenderWindow & p_window)
 {
 	// try this here? if not make an init
 	settingsScreenImage.loadFromFile("settingsBackground.png");
+	controlsTex.loadFromFile("controls.png");
 
 	sprSettingsScreen.setTexture(settingsScreenImage);
 	m_settingsScreenRect = sf::IntRect(0, 0, 800, 600);
 	sprSettingsScreen.setTextureRect(m_settingsScreenRect);
 	sprSettingsScreen.setPosition(sf::Vector2f(0, 0));
+
+	sprControls.setTexture(controlsTex);
+	m_controlsRect = sf::IntRect(0, 0, 800, 600);
+	sprControls.setTextureRect(m_settingsScreenRect);
+	sprControls.setPosition(sf::Vector2f(0, 50));
 }
 
 // Collision between game objects
@@ -387,6 +396,7 @@ void Update(sf::RenderWindow &p_window)
 		// draw settings
 		DrawSettings(p_window);
 		p_window.draw(sprSettingsScreen);
+		p_window.draw(sprControls);
 		break;
 	}
 	soundManager2014.Update(player.getPosition(), player.getVelocity());
@@ -413,6 +423,7 @@ void LoadFirstLevel()
 		}
 	}
 
+	tileMap[5][9] = Tile(sprEnd, sf::Vector2f(450, 250));
 	/////////////////////////////////////////////////////////
 		//	Top  Wall
 		tileMap[0][0].tex = Tile::m_texture::MAZE;
@@ -450,6 +461,8 @@ void LoadFirstLevel()
 		tileMap[11][13].tex = Tile::m_texture::MAZE;
 		tileMap[11][14].tex = Tile::m_texture::MAZE;
 		tileMap[11][15].tex = Tile::m_texture::MAZE;
+
+		tileMap[5][9].tex = Tile::m_texture::END;
 	
 
 		/////////////////////////////////////////////////////////
@@ -484,45 +497,56 @@ void LoadFirstLevel()
 
 		/////////////////////////////////////////////////////////
 		//	Maze Bit
-		tileMap[3][1].tex = Tile::m_texture::MAZE;
+		tileMap[1][2].tex = Tile::m_texture::MAZE;
+		tileMap[2][2].tex = Tile::m_texture::MAZE;
 		tileMap[3][2].tex = Tile::m_texture::MAZE;
-		tileMap[3][3].tex = Tile::m_texture::MAZE;
+		tileMap[4][2].tex = Tile::m_texture::MAZE;
+		tileMap[5][2].tex = Tile::m_texture::MAZE;
+
+		tileMap[8][2].tex = Tile::m_texture::MAZE;
+		tileMap[9][3].tex = Tile::m_texture::MAZE;
+		tileMap[10][4].tex = Tile::m_texture::MAZE;
+
 		tileMap[3][4].tex = Tile::m_texture::MAZE;
-		tileMap[3][5].tex = Tile::m_texture::MAZE;
-		tileMap[3][6].tex = Tile::m_texture::MAZE;
+		tileMap[4][4].tex = Tile::m_texture::MAZE;
+		tileMap[5][4].tex = Tile::m_texture::MAZE;
+		tileMap[6][4].tex = Tile::m_texture::MAZE;
+		tileMap[7][4].tex = Tile::m_texture::MAZE;
 
-		//
-		tileMap[7][8].tex = Tile::m_texture::MAZE;
-		tileMap[7][7].tex = Tile::m_texture::MAZE;
+		tileMap[8][5].tex = Tile::m_texture::MAZE;
 		tileMap[8][6].tex = Tile::m_texture::MAZE;
-		tileMap[9][6].tex = Tile::m_texture::MAZE;
-		tileMap[10][6].tex = Tile::m_texture::MAZE;
-		tileMap[11][6].tex = Tile::m_texture::MAZE;
+		tileMap[8][7].tex = Tile::m_texture::MAZE;
+		tileMap[8][8].tex = Tile::m_texture::MAZE;
+		tileMap[8][9].tex = Tile::m_texture::MAZE;
+		tileMap[8][10].tex = Tile::m_texture::MAZE;
 
-		//
-		tileMap[11][5].tex = Tile::m_texture::MAZE;
-		tileMap[11][4].tex = Tile::m_texture::MAZE;
-		tileMap[11][3].tex = Tile::m_texture::MAZE;
-		tileMap[11][2].tex = Tile::m_texture::MAZE;
+		tileMap[8][11].tex = Tile::m_texture::MAZE;
+		tileMap[7][12].tex = Tile::m_texture::MAZE;
 
-		//	
-		tileMap[15][5].tex = Tile::m_texture::MAZE;
-		tileMap[15][4].tex = Tile::m_texture::MAZE;
-		tileMap[15][3].tex = Tile::m_texture::MAZE;
-		tileMap[15][2].tex = Tile::m_texture::MAZE;
-		tileMap[15][1].tex = Tile::m_texture::MAZE;
+		tileMap[6][10].tex = Tile::m_texture::MAZE;
+		tileMap[6][9].tex = Tile::m_texture::MAZE;
+		tileMap[6][8].tex = Tile::m_texture::MAZE;
+		tileMap[6][7].tex = Tile::m_texture::MAZE;
+		tileMap[6][6].tex = Tile::m_texture::MAZE;
+		tileMap[5][10].tex = Tile::m_texture::MAZE;
+		tileMap[4][10].tex = Tile::m_texture::MAZE;
+		tileMap[4][9].tex = Tile::m_texture::MAZE;
+		tileMap[4][8].tex = Tile::m_texture::MAZE;
+		tileMap[4][7].tex = Tile::m_texture::MAZE;
+		tileMap[4][6].tex = Tile::m_texture::MAZE;
 
-		//
-		tileMap[12][9].tex = Tile::m_texture::MAZE;
-		tileMap[12][10].tex = Tile::m_texture::MAZE;
-		tileMap[12][12].tex = Tile::m_texture::MAZE;
-		tileMap[12][13].tex = Tile::m_texture::MAZE;
+		tileMap[6][13].tex = Tile::m_texture::MAZE;
+		tileMap[4][13].tex = Tile::m_texture::MAZE;
+		tileMap[3][12].tex = Tile::m_texture::MAZE;
+
+		tileMap[2][5].tex = Tile::m_texture::MAZE;
+		tileMap[2][6].tex = Tile::m_texture::MAZE;
+		tileMap[2][7].tex = Tile::m_texture::MAZE;
+		tileMap[2][8].tex = Tile::m_texture::MAZE;
+		tileMap[2][9].tex = Tile::m_texture::MAZE;
+		tileMap[2][10].tex = Tile::m_texture::MAZE;
+		tileMap[2][11].tex = Tile::m_texture::MAZE;
 }
-
-
-
-
-
 
 ////////////////////////////////////////////////////////////
 ///Entrypoint of application 
@@ -530,19 +554,21 @@ void LoadFirstLevel()
 
 int main()
 {
-	m_tex1.loadFromFile("playerWpistol.png");
-	m_tex2.loadFromFile("bullet.png");
+	m_playerTex.loadFromFile("playerWpistol.png");
+	m_bulletTex.loadFromFile("bullet.png");
 	m_hud.loadFromFile("Game HUD.png");
-	player = Player(*&m_tex1,sf::Vector2f(280, 240));
-	bulletManager2012 = BulletManager(*&m_tex2);
+	player = Player(*&m_playerTex,sf::Vector2f(75, 75));
+	bulletManager2012 = BulletManager(*&m_bulletTex);
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
 
-
-	sprHud.setTexture(m_hud);
-	m_spriteRect = sf::IntRect(0, 0, 800, 600);
-	sprHud.setTextureRect(m_spriteRect);
-	sprHud.setPosition(sf::Vector2f(0,0));
+	if (currentState == GameStates::playGameState)
+	{
+		sprHud.setTexture(m_hud);
+		m_spriteRect = sf::IntRect(0, 0, 800, 600);
+		sprHud.setTextureRect(m_spriteRect);
+		sprHud.setPosition(sf::Vector2f(0, 0));
+	}
 
 	sf::Sprite sprFloor;
 	sf::Texture texFloor;
@@ -552,6 +578,11 @@ int main()
 	sf::Texture texMaze;
 	texMaze.loadFromFile("MazeTest.png");
 	sprMaze.setTexture(texMaze);
+
+	sf::Texture texEnd;
+	texEnd.loadFromFile("EndGoal.png");
+	sprEnd.setTexture(texEnd);
+
 
 	sf::Sprite sprEnemy;
 	sf::Texture texEnemy;
@@ -736,6 +767,7 @@ int main()
 				}
 			}
 		}
+		window.draw(tileMap[5][9].GetSprite());
 		Update(window);  // do collisions after update and before draw
 		Draw(window);
 

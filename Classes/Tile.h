@@ -9,7 +9,7 @@ public:
 	Tile(sf::Sprite, sf::Vector2f);
 	~Tile();
 
-	enum m_texture{ MAZE, GROUND};
+	enum m_texture{ MAZE, GROUND, END};
 	m_texture tex;
 
 
