@@ -60,7 +60,7 @@ enum GameStates{ menuState, gameSettings, playGameState };
 
 GameStates currentState = GameStates::menuState;
 
-SoundManager soundManager2014;
+//SoundManager soundManager2014;
 
 sf::Sprite sprCursor;
 sf::IntRect m_cursorRect;
@@ -228,132 +228,148 @@ void Collisions(sf::RenderWindow &p_window)
 	// target position taken from player and passed to enemy
 	// this wont be used when pathfinding is implemented
 	sf::Vector2f playerCurrentPos = player.getPosition();
+	sf::IntRect playerRect(player.getPosition().x - 8, player.getPosition().y - 11, 24, 24);  // size of player texture
 
-	for (int i = 0; i < enemyList.size(); i++)
-	{
-		sf::IntRect enemyRect(enemyList.at(i).GetPosition().x + 8, enemyList.at(i).GetPosition().y -12, 35, 35); 
-		sf::IntRect playerRect(player.getPosition().x - 8, player.getPosition().y -11, 24, 24);  // size of player texture
 
-		// enemy collision box, un comment to see
-		sf::RectangleShape rectEm;
-		rectEm.setPosition(sf::Vector2f(enemyRect.left, enemyRect.top));
-		rectEm.setFillColor(sf::Color::Red);
-		rectEm.setSize(sf::Vector2f(24, 24));
-		p_window.draw(rectEm);
-
-		if (enemyList.at(i).GetAlive() == true)
-		{
-			if (playerRect.intersects(enemyRect) == true)
-			{
-				bool playerDead = false;
-				player.SetAlive(playerDead);
-			}
-		}
-
-		for (int j = 0; j < bulletManager2012.m_bulletList.size(); j++)
-		{
-
-			if (bulletManager2012.m_bulletList.at(j).GetBulletRectangle().intersects(enemyRect))
-			{
-				enemyList.at(i).SetAlive(false);
-				enemyList.erase(enemyList.begin() +i);
-				bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + j);
-			}
-		}
-		
-		if (enemyList.at(i).GetAlive() == true)
-		{
-			enemyList.at(i).update(playerCurrentPos, deltaTime);
-			p_window.draw(enemyList.at(i).GetSprite());	
-		}
-	
-		
+		// start of tile loop
 		for (int i = 0; i < 16; i++)
 		{
 			for (int j = 0; j < 16; j++)
 			{
-				if (tileMap[i][j].tex == Tile::m_texture::MAZE)
-				{
-					sf::IntRect mazeRect(j * 50, i * 50, 50, 50);
-					if (playerRect.intersects(mazeRect))
+					if (tileMap[i][j].tex == Tile::m_texture::MAZE)
 					{
-						// check distance from player centre and maze centre
-						//sf::Vector2f mazePos(mazeRect.left, mazeRect.top);
-						//sf::Vector2f mazeCentre(mazePos.x + 25, mazePos.y + 25);
-						//sf::Vector2f playerCentre(player.getPosition().x + 16, player.getPosition().y + 16);
-
-						
-
-						float distanceX;
-						
-						//distanceX = playerCentre.x - mazePos.x;
-						distanceX = (player.getPosition().x +16) - mazeRect.left;
-						pushRight = false;
-						
-						if (distanceX > 5)  // ie must have been coming from right side to left 
+						sf::IntRect mazeRect(j * 50, i * 50, 50, 50);
+						// added bullet collision with walls 
+						for (int k = 0; k < bulletManager2012.m_bulletList.size(); k++)
 						{
-							distanceX = playerRect.left - (mazeRect.left + 50);
-							pushRight = true;
-						}
-						if (distanceX < 0)
-						{
-							distanceX = distanceX * -1;   // if negative, multiply by -1 to get a positive value
-						}
-
-						// check x and y seperately
-						float pushBackDistX; // distance between current player and ideal distance , ie distance to push back
-						pushBackDistX = distanceX;
-						
-
-						float distanceY;
-						distanceY = (player.getPosition().y +12) - mazeRect.top;
-						pushUp = false;
-
-						if (distanceY > 5)  // ie must be coming from bottom to top
-						{
-							distanceY = playerRect.top  - (mazeRect.top + 50);
-							pushUp = true;
-						}
-
-
-
-						if (distanceY < 0)
-						{
-							distanceY = distanceY * -1;   // if negative, multipy by -1 to get a positive value
-						}
-
-						float pushBackDistY;
-						pushBackDistY = distanceY;
-
-						if (pushBackDistX < pushBackDistY)
-						{
-							if (pushRight == true)
+							if (bulletManager2012.m_bulletList.at(k).GetBulletRectangle().intersects(mazeRect))
 							{
-								player.SetPosition(sf::Vector2f(player.getPosition().x + pushBackDistX, player.getPosition().y));  // collide right
-							}
-							else
-							{
-								player.SetPosition(sf::Vector2f(player.getPosition().x - pushBackDistX, player.getPosition().y));  // collide left
+								bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + k);
 							}
 						}
-
-
-						if (pushBackDistX > pushBackDistY)
+						if (playerRect.intersects(mazeRect))
 						{
-							if (pushUp == true)
+							// check distance from player centre and maze centre
+							//sf::Vector2f mazePos(mazeRect.left, mazeRect.top);
+							//sf::Vector2f mazeCentre(mazePos.x + 25, mazePos.y + 25);
+							//sf::Vector2f playerCentre(player.getPosition().x + 16, player.getPosition().y + 16);
+
+
+
+							float distanceX;
+
+							//distanceX = playerCentre.x - mazePos.x;
+							distanceX = (player.getPosition().x + 16) - mazeRect.left;
+							pushRight = false;
+
+							if (distanceX > 5)  // ie must have been coming from right side to left 
 							{
-								player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y + pushBackDistY));  // collide up
+								distanceX = playerRect.left - (mazeRect.left + 50);
+								pushRight = true;
 							}
-							else
+							if (distanceX < 0)
 							{
-								player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y - pushBackDistY));  // collide down
+								distanceX = distanceX * -1;   // if negative, multiply by -1 to get a positive value
 							}
+
+							// check x and y seperately
+							float pushBackDistX; // distance between current player and ideal distance , ie distance to push back
+							pushBackDistX = distanceX;
+
+
+							float distanceY;
+							distanceY = (player.getPosition().y + 12) - mazeRect.top;
+							pushUp = false;
+
+							if (distanceY > 5)  // ie must be coming from bottom to top
+							{
+								distanceY = playerRect.top - (mazeRect.top + 50);
+								pushUp = true;
+							}
+
+
+
+							if (distanceY < 0)
+							{
+								distanceY = distanceY * -1;   // if negative, multipy by -1 to get a positive value
+							}
+
+							float pushBackDistY;
+							pushBackDistY = distanceY;
+
+							if (pushBackDistX < pushBackDistY)
+							{
+								if (pushRight == true)
+								{
+									player.SetPosition(sf::Vector2f(player.getPosition().x + pushBackDistX, player.getPosition().y));  // collide right
+								}
+								else
+								{
+									player.SetPosition(sf::Vector2f(player.getPosition().x - pushBackDistX, player.getPosition().y));  // collide left
+								}
+							}
+
+
+							if (pushBackDistX > pushBackDistY)
+							{
+								if (pushUp == true)
+								{
+									player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y + pushBackDistY));  // collide up
+								}
+								else
+								{
+									player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y - pushBackDistY));  // collide down
+								}
+							}
+							
 						}
 					}
 				}
 			}
-		}
-	}
+
+
+			///////////////////////////////////////////////////////////////////////////////////////
+			for (int i = 0; i < enemyList.size(); i++)
+			{
+				sf::IntRect enemyRect(enemyList.at(i).GetPosition().x + 8, enemyList.at(i).GetPosition().y - 12, 35, 35);
+
+				// enemy collision box, un comment to see
+				sf::RectangleShape rectEm;
+				rectEm.setPosition(sf::Vector2f(enemyRect.left, enemyRect.top));
+				rectEm.setFillColor(sf::Color::Red);
+				rectEm.setSize(sf::Vector2f(24, 24));
+				p_window.draw(rectEm);
+
+				if (enemyList.at(i).GetAlive() == true)
+				{
+					if (playerRect.intersects(enemyRect) == true)
+					{
+						bool playerDead = false;
+						player.SetAlive(playerDead);
+					}
+				}
+
+				// start of bullet loop
+				for (int j = 0; j < bulletManager2012.m_bulletList.size(); j++)
+				{
+					if (bulletManager2012.m_bulletList.at(j).GetBulletRectangle().intersects(enemyRect))
+					{
+						enemyList.at(i).SetAlive(false);
+						enemyList.erase(enemyList.begin() + i);
+						bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + j);
+					}
+				}
+				// end of bullet loop
+
+
+				if (enemyList.at(i).GetAlive() == true)
+				{
+					enemyList.at(i).update(playerCurrentPos, deltaTime);
+					p_window.draw(enemyList.at(i).GetSprite());
+				}
+			}
+			////////////////////////////////////////////////////////////////////////////////////
+	
 }
 
 // UPDATE EVENT
@@ -399,7 +415,7 @@ void Update(sf::RenderWindow &p_window)
 		p_window.draw(sprControls);
 		break;
 	}
-	soundManager2014.Update(player.getPosition(), player.getVelocity());
+	//soundManager2014.Update(player.getPosition(), player.getVelocity());
 }
 
 // DRAW EVENT
@@ -597,9 +613,9 @@ int main()
 	quitGameImage.loadFromFile("QuitGame.png");
 	settingsImage.loadFromFile("Settings.png");
 	cursorImage.loadFromFile("cursor.png");
-	soundManager2014 = SoundManager();
-	soundManager2014.Inititialise();
-	soundManager2014.PlayBackgroundMusic();
+	//soundManager2014 = SoundManager();
+	//soundManager2014.Inititialise();
+	//soundManager2014.PlayBackgroundMusic();
 	cursorPosition = sf::Vector2f(50, 500);
 
 	//soundManager2014.PlayGameMusic();  // this was commented out on jamie's edition
@@ -647,12 +663,12 @@ int main()
 		{
 			if (backgroundMusicEnabled == true && pressedLastFrame == false)
 			{
-				soundManager2014.PauseMusic();
+				//soundManager2014.PauseMusic();
 				backgroundMusicEnabled = false;
 			}
 			else if (pressedLastFrame == false && backgroundMusicEnabled == false)
 			{
-				soundManager2014.UnPauseMusic();
+				//soundManager2014.UnPauseMusic();
 				backgroundMusicEnabled = true;
 			}
 
@@ -665,19 +681,19 @@ int main()
 
 		if (sf::Joystick::isButtonPressed(0, 3) && selectedButton == newGame) //"Y" button on the XBox 360 controller
 		{
-			if (soundManager2014.enable3dAudio == true)
-			{
-				soundManager2014.enable3dAudio = false;
-				soundManager2014.dopplerEnabaled = false;
-			}
+			//if (soundManager2014.enable3dAudio == true)
+			//{
+			//	soundManager2014.enable3dAudio = false;
+			//	soundManager2014.dopplerEnabaled = false;
+			//}
 
 
-			else if (soundManager2014.enable3dAudio == false)
-			{
-				soundManager2014.enable3dAudio = true;
-				soundManager2014.dopplerEnabaled = true;
-
-			}
+			//else if (soundManager2014.enable3dAudio == false)
+			//{
+			//	soundManager2014.enable3dAudio = true;
+			//	soundManager2014.dopplerEnabaled = true;
+			//
+			//}
 
 		}
 
@@ -687,8 +703,8 @@ int main()
 		}
 		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == newGame) //"A" button on the XBox 360 controller
 		{
-			soundManager2014.StopSound();
-			soundManager2014.PlayZombieSound();
+			//soundManager2014.StopSound();
+			//soundManager2014.PlayZombieSound();
 			currentState = GameStates::playGameState;
 			pressBtn = true;
 		}
@@ -718,10 +734,10 @@ int main()
 				{
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
-					if (soundEffectsEnabled && pressedLastFrame1 == false)
-					{
-						soundManager2014.PlayBulletSound();
-					}
+					//if (soundEffectsEnabled && pressedLastFrame1 == false)
+					//{
+					//	soundManager2014.PlayBulletSound();
+					//}
 
 					timer = 0;
 					reloadingSound = true;
@@ -732,17 +748,17 @@ int main()
 					bulletCount = 0;
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
-					if (soundEffectsEnabled && pressedLastFrame1 == false)
-					{
-						soundManager2014.PlayBulletSound();
-					}
+					//if (soundEffectsEnabled && pressedLastFrame1 == false)
+					//{
+					//	soundManager2014.PlayBulletSound();
+					//}
 				}
 
 				else if (timer < RELOADDELAY && soundEffectsEnabled)
 				{
 					if (reloadingSound == true)
 					{
-						soundManager2014.PlayReloadSound();
+						//soundManager2014.PlayReloadSound();
 						reloadingSound = false;
 					}
 
