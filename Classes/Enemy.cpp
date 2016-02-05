@@ -99,6 +99,7 @@ void Enemy::update(sf::Vector2f p_targetPos, sf::Time p_deltaTime)
 	}
 
 	m_angle = -atan2(m_position.x - p_targetPos.x, m_position.y - p_targetPos.y);
+	m_sprite.setOrigin(sf::Vector2f(12.5f, 12.5f)); // fix rotations, 12.5f half image size
 	m_sprite.setPosition(m_position);
 	m_sprite.setRotation(m_angle * 57.2957795);   // converting from radians to degrees
 }

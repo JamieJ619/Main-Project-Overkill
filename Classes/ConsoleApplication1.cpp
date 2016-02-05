@@ -59,6 +59,8 @@ Enemy em1, em2, em3, em4;
 enum GameStates{ menuState, gameSettings, playGameState };
 
 GameStates currentState = GameStates::menuState;
+sf::View viewport((player.getPosition()), sf::Vector2f(360, 280));
+sf::View radar(sf::Vector2f(300, 220), sf::Vector2f(60, 60));
 
 //SoundManager soundManager2014;
 
@@ -330,13 +332,13 @@ void Collisions(sf::RenderWindow &p_window)
 			///////////////////////////////////////////////////////////////////////////////////////
 			for (int i = 0; i < enemyList.size(); i++)
 			{
-				sf::IntRect enemyRect(enemyList.at(i).GetPosition().x + 8, enemyList.at(i).GetPosition().y - 12, 35, 35);
+				sf::IntRect enemyRect(enemyList.at(i).GetPosition().x - 12.5f, enemyList.at(i).GetPosition().y - 12.5f, 25, 25);
 
 				// enemy collision box, un comment to see
 				sf::RectangleShape rectEm;
 				rectEm.setPosition(sf::Vector2f(enemyRect.left, enemyRect.top));
 				rectEm.setFillColor(sf::Color::Red);
-				rectEm.setSize(sf::Vector2f(24, 24));
+				rectEm.setSize(sf::Vector2f(25, 25));
 				p_window.draw(rectEm);
 
 				if (enemyList.at(i).GetAlive() == true)
@@ -364,6 +366,7 @@ void Collisions(sf::RenderWindow &p_window)
 				if (enemyList.at(i).GetAlive() == true)
 				{
 					enemyList.at(i).update(playerCurrentPos, deltaTime);
+
 					p_window.draw(enemyList.at(i).GetSprite());
 				}
 			}
@@ -371,6 +374,12 @@ void Collisions(sf::RenderWindow &p_window)
 	
 }
 
+// DRAW EVENT
+/////////////////////////////
+void Draw(sf::RenderWindow &p_window)
+{
+	p_window.draw(sprHud);
+}
 // UPDATE EVENT
 /////////////////////////////
 void Update(sf::RenderWindow &p_window)
@@ -400,6 +409,7 @@ void Update(sf::RenderWindow &p_window)
 		if (player.GetAlive() == true)
 		{
 			player.Update(deltaTime);
+			viewport.setCenter(player.getPosition());
 			bulletManager2012.Update(deltaTime);
 			bulletManager2012.Draw(p_window);
 			p_window.draw(player.getSprite());
@@ -417,12 +427,7 @@ void Update(sf::RenderWindow &p_window)
 	//soundManager2014.Update(player.getPosition(), player.getVelocity());
 }
 
-// DRAW EVENT
-/////////////////////////////
-void Draw(sf::RenderWindow &p_window)
-{
-	p_window.draw(sprHud);
-}
+
 
 // Load the first level
 /////////////////////////
@@ -573,10 +578,13 @@ int main()
 	m_playerTex.loadFromFile("playerWpistol.png");
 	m_bulletTex.loadFromFile("bullet.png");
 	m_hud.loadFromFile("Game HUD.png");
-	player = Player(*&m_playerTex,sf::Vector2f(75, 75));
+	player = Player(*&m_playerTex,sf::Vector2f(180, 140));
 	bulletManager2012 = BulletManager(*&m_bulletTex);
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
+	viewport.setViewport(sf::FloatRect(0, 0, 1, 1));
+	radar.setViewport(sf::FloatRect(0.75f, 0, 0.25f, 0.25f));
+	radar.zoom(20.f);
 
 	if (currentState == GameStates::playGameState)
 	{
@@ -771,6 +779,10 @@ int main()
 		// please dont change order these methods are done in 
 
 		window.clear();
+		if (currentState == playGameState)
+		{
+			window.setView(viewport); // main view
+		}
 		window.draw(sprFloor);
 		LoadFirstLevel();  // this has to load first before being drawn so keep method before the following draw statement
 		for (int i = 0; i < 16; i++)
@@ -784,8 +796,31 @@ int main()
 			}
 		}
 		window.draw(tileMap[5][9].GetSprite());
+		
 		Update(window);  // do collisions after update and before draw
 		Draw(window);
+
+		if (currentState == playGameState)
+		{
+			window.setView(radar); // radar view drawn on top of main view
+		}
+		window.draw(sprFloor);
+		LoadFirstLevel();  // this has to load first before being drawn so keep method before the following draw statement
+		for (int i = 0; i < 16; i++)
+		{
+			for (int j = 0; j < 16; j++)
+			{
+				if (tileMap[i][j].tex == Tile::m_texture::MAZE)
+				{
+					window.draw(tileMap[j][i].GetSprite());
+				}
+			}
+		}
+		window.draw(tileMap[5][9].GetSprite());
+
+		Update(window);  // do collisions after update and before draw
+		Draw(window);
+
 
 
 		// player's collision box, un comment to see 
