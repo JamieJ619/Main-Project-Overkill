@@ -30,6 +30,8 @@ public:
 	bool GetAlive();
 	void SetAlive(bool);
 	void SetPosition(sf::Vector2f);
+	void SetScore(int score);
+	int GetScore();
 
 
 private:
@@ -49,4 +51,6 @@ private:
 	sf::Texture * m_tex;
 	sf::IntRect m_spriteRect;
 	sf::Sprite m_playerSprite;
+
+	int m_score;
 };

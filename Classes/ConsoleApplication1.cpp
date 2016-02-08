@@ -50,6 +50,9 @@ sf::IntRect m_spriteRect;
 const float BULLETDELAY = 0.3f;
 const float RELOADDELAY = 2.5f;
 
+float timeSeconds = 0;
+int timeMins = 0;
+
 bool pushRight = false;
 bool pushUp = false;
 
@@ -61,6 +64,8 @@ enum GameStates{ menuState, gameSettings, playGameState };
 GameStates currentState = GameStates::menuState;
 sf::View viewport((player.getPosition()), sf::Vector2f(360, 280));
 sf::View radar(sf::Vector2f(300, 220), sf::Vector2f(60, 60));
+int score;
+
 
 //SoundManager soundManager2014;
 
@@ -113,6 +118,10 @@ sf::IntRect m_controlsRect;
 sf::Texture controlsTex;
 
 std::vector<Enemy> enemyList;
+
+sf::Font font;
+sf::Text text;
+sf::Text timeText;
 
 // jamie's draw menu method
 void DrawMenu(sf::RenderWindow & p_window)
@@ -228,7 +237,6 @@ void Collisions(sf::RenderWindow &p_window)
 
 	// move the enemy towards the player with a simple position check 
 	// target position taken from player and passed to enemy
-	// this wont be used when pathfinding is implemented
 	sf::Vector2f playerCurrentPos = player.getPosition();
 	sf::IntRect playerRect(player.getPosition().x - 8, player.getPosition().y - 11, 24, 24);  // size of player texture
 
@@ -335,11 +343,11 @@ void Collisions(sf::RenderWindow &p_window)
 				sf::IntRect enemyRect(enemyList.at(i).GetPosition().x - 12.5f, enemyList.at(i).GetPosition().y - 12.5f, 25, 25);
 
 				// enemy collision box, un comment to see
-				sf::RectangleShape rectEm;
+				/*sf::RectangleShape rectEm;
 				rectEm.setPosition(sf::Vector2f(enemyRect.left, enemyRect.top));
 				rectEm.setFillColor(sf::Color::Red);
 				rectEm.setSize(sf::Vector2f(25, 25));
-				p_window.draw(rectEm);
+				p_window.draw(rectEm);*/
 
 				if (enemyList.at(i).GetAlive() == true)
 				{
@@ -358,10 +366,14 @@ void Collisions(sf::RenderWindow &p_window)
 						enemyList.at(i).SetAlive(false);
 						enemyList.erase(enemyList.begin() + i);
 						bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + j);
+
+						score = player.GetScore() + 100;
+						player.SetScore(score);
+						text.setString("Score: " + score);
+
 					}
 				}
 				// end of bullet loop
-
 
 				if (enemyList.at(i).GetAlive() == true)
 				{
@@ -378,7 +390,21 @@ void Collisions(sf::RenderWindow &p_window)
 /////////////////////////////
 void Draw(sf::RenderWindow &p_window)
 {
-	p_window.draw(sprHud);
+	if (currentState == GameStates::playGameState)
+	{
+		sprHud.setTexture(m_hud);
+		m_spriteRect = sf::IntRect(0, 0, 800, 600);
+		sprHud.setTextureRect(m_spriteRect);
+		sprHud.setScale(0.45f, 0.47f);
+		sprHud.setPosition(sf::Vector2f(player.getPosition().x - 180, player.getPosition().y - 140));
+		text.setPosition(sf::Vector2f(player.getPosition().x - 38, player.getPosition().y - 145));
+		text.setString("Score: " + std::to_string(player.GetScore()));
+		p_window.draw(sprHud);
+
+		p_window.draw(text);
+		p_window.draw(timeText);
+	}
+
 }
 // UPDATE EVENT
 /////////////////////////////
@@ -406,14 +432,30 @@ void Update(sf::RenderWindow &p_window)
 		myClock.restart();
 		XboxController::Instance().Update(deltaTime);
 		Collisions(p_window);
-		if (player.GetAlive() == true)
+
+		if (player.GetAlive() == true && currentState == GameStates::playGameState)
 		{
+			deltaTime = myClock.restart();
 			player.Update(deltaTime);
 			viewport.setCenter(player.getPosition());
 			bulletManager2012.Update(deltaTime);
 			bulletManager2012.Draw(p_window);
 			p_window.draw(player.getSprite());
+
+			timeSeconds += deltaTime.asSeconds() * 2.3f;
+
+			
+			if (timeSeconds >= 60)
+			{
+				timeSeconds = 0;
+				timeMins += 1;
+			}
+
+			timeText.setPosition(sf::Vector2f(player.getPosition().x - 130, player.getPosition().y - 145));
+			timeText.setString(std::to_string(timeMins) + ":" + std::to_string((int)timeSeconds));
 		}
+
+
 		break;
 
 	case gameSettings:
@@ -583,16 +625,18 @@ int main()
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
 	viewport.setViewport(sf::FloatRect(0, 0, 1, 1));
-	radar.setViewport(sf::FloatRect(0.75f, 0, 0.25f, 0.25f));
+	radar.setViewport(sf::FloatRect(0.757f, 0.71f, 0.25f, 0.32f));
 	radar.zoom(20.f);
 
-	if (currentState == GameStates::playGameState)
-	{
-		sprHud.setTexture(m_hud);
-		m_spriteRect = sf::IntRect(0, 0, 800, 600);
-		sprHud.setTextureRect(m_spriteRect);
-		sprHud.setPosition(sf::Vector2f(0, 0));
-	}
+	font.loadFromFile("youmurdererbb_reg.otf");
+	text.setFont(font);
+	text.setCharacterSize(24);
+	text.setColor(sf::Color::Red);
+	text.setPosition(sf::Vector2f(player.getPosition().x - 35, player.getPosition().y - 145));
+
+	timeText.setFont(font);
+	timeText.setCharacterSize(24);
+	timeText.setColor(sf::Color::Red);
 
 	sf::Sprite sprFloor;
 	sf::Texture texFloor;
@@ -602,6 +646,7 @@ int main()
 	sf::Texture texMaze;
 	texMaze.loadFromFile("MazeTest.png");
 	sprMaze.setTexture(texMaze);
+	
 
 	sf::Texture texEnd;
 	texEnd.loadFromFile("EndGoal.png");
@@ -627,10 +672,10 @@ int main()
 	cursorPosition = sf::Vector2f(50, 500);
 
 	//soundManager2014.PlayGameMusic();  // this was commented out on jamie's edition
-	em1 = Enemy(sprEnemy, sf::Vector2f(650, 480), 10);
-	em2 = Enemy(sprEnemy, sf::Vector2f(250, 480), 20);
-	em3 = Enemy(sprEnemy, sf::Vector2f(160, 480), 26);
-	em4 = Enemy(sprEnemy, sf::Vector2f(50000, 35000), 2);
+	em1 = Enemy(sprEnemy, sf::Vector2f(650, 480), 5);
+	em2 = Enemy(sprEnemy, sf::Vector2f(250, 480), 5);
+	em3 = Enemy(sprEnemy, sf::Vector2f(180, 480), 5);
+	em4 = Enemy(sprEnemy, sf::Vector2f(50000, 35000), 5);
 	enemyList.push_back(em1);
 	enemyList.push_back(em2);
 	enemyList.push_back(em3);
@@ -819,7 +864,6 @@ int main()
 		window.draw(tileMap[5][9].GetSprite());
 
 		Update(window);  // do collisions after update and before draw
-		Draw(window);
 
 
 

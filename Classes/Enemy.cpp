@@ -62,7 +62,7 @@ void Enemy::update(sf::Vector2f p_targetPos, sf::Time p_deltaTime)
 	}*/
 
 	// going from bottom right to left
-	if (m_position.x > 150 && canMoveLeft == true )
+	if (m_position.x > 170 && canMoveLeft == true )
 	{
 		m_position.x -= m_velocity * temp;
 		canMoveUp = true;
@@ -70,7 +70,7 @@ void Enemy::update(sf::Vector2f p_targetPos, sf::Time p_deltaTime)
 		canMoveRight = false;
 	}
 	// going from bottom left to top left
-	if (m_position.x < 150 && m_position.y > 80 && canMoveUp == true)
+	if (m_position.x < 170 && m_position.y > 80 && canMoveUp == true)
 	{
 		m_position.y -= m_velocity * temp;
 		canMoveLeft = false;
