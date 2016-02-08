@@ -29,6 +29,7 @@
 #include "Tile.h"
 #include "Enemy.h"
 #include "SoundManager.h"
+#include "Hostage.h"
 
 
 
@@ -37,9 +38,11 @@
 sf::Clock myClock;
 sf::Time deltaTime;
 sf::Texture m_playerTex;
+sf::Texture m_hostageTex;
 sf::Texture m_bulletTex;
 sf::Texture m_hud;
 Player player;
+Hostage hostage;
 BulletManager bulletManager2012;
 sf::Sprite sprHud;
 sf::Sprite sprMaze;
@@ -66,6 +69,11 @@ sf::View viewport((player.getPosition()), sf::Vector2f(360, 280));
 sf::View radar(sf::Vector2f(300, 220), sf::Vector2f(60, 60));
 int score;
 
+sf::Sprite sprHealth;
+sf::IntRect healthRect;
+sf::Texture texHealthG;
+sf::Texture texHealthY;
+sf::Texture texHealthR;
 
 //SoundManager soundManager2014;
 
@@ -349,12 +357,21 @@ void Collisions(sf::RenderWindow &p_window)
 				rectEm.setSize(sf::Vector2f(25, 25));
 				p_window.draw(rectEm);*/
 
+
 				if (enemyList.at(i).GetAlive() == true)
 				{
 					if (playerRect.intersects(enemyRect) == true)
 					{
-						bool playerDead = false;
-						player.SetAlive(playerDead);
+						enemyList.at(i).SetAlive(false);
+						enemyList.erase(enemyList.begin() + i);
+
+						int health = player.GetHealth();
+						player.SetHealth(health - 35);
+						if (player.GetHealth() <= 0)
+						{
+							bool playerDead = false;
+							player.SetAlive(playerDead);
+						}
 					}
 				}
 
@@ -382,6 +399,20 @@ void Collisions(sf::RenderWindow &p_window)
 					p_window.draw(enemyList.at(i).GetSprite());
 				}
 			}
+
+			sf::IntRect hostageRect(hostage.getPosition().x - 16, hostage.getPosition().y -12, 32, 24);
+			// hostage collision box, un comment to see
+			sf::RectangleShape hostRect;
+			hostRect.setPosition(sf::Vector2f(hostageRect.left, hostageRect.top));
+			hostRect.setFillColor(sf::Color::Red);
+			hostRect.setSize(sf::Vector2f(32, 24));
+			p_window.draw(hostRect);
+
+
+			if (playerRect.intersects(hostageRect))
+			{
+				hostage.setRescue(true);
+			}
 			////////////////////////////////////////////////////////////////////////////////////
 	
 }
@@ -403,6 +434,26 @@ void Draw(sf::RenderWindow &p_window)
 
 		p_window.draw(text);
 		p_window.draw(timeText);
+
+		if (player.GetHealth() <= 60 && player.GetHealth() >= 30)
+		{
+			sprHealth.setTexture(texHealthY);
+		}
+		else if (player.GetHealth() <= 30)
+		{
+			sprHealth.setTexture(texHealthR);
+		}
+		else
+			sprHealth.setTexture(texHealthG);
+
+		healthRect = sf::IntRect(0, 0, 50, 50);
+		sprHealth.setTextureRect(healthRect);
+		sprHealth.setScale((float)player.GetHealth() / 27, 0.3f);
+		sprHealth.setPosition(sf::Vector2f(player.getPosition().x - 179, player.getPosition().y + 130));
+
+
+
+		p_window.draw(sprHealth);
 	}
 
 }
@@ -441,7 +492,11 @@ void Update(sf::RenderWindow &p_window)
 			bulletManager2012.Update(deltaTime);
 			bulletManager2012.Draw(p_window);
 			p_window.draw(player.getSprite());
-
+			p_window.draw(hostage.getSprite());
+			if (player.hostagePositions.size() == 1000)
+			{
+				hostage.Update(player.GetHostagePos(), player.getRotation());
+			}
 			timeSeconds += deltaTime.asSeconds() * 2.3f;
 
 			
@@ -618,9 +673,14 @@ void LoadFirstLevel()
 int main()
 {
 	m_playerTex.loadFromFile("playerWpistol.png");
+	m_hostageTex.loadFromFile("Hostage.png");
 	m_bulletTex.loadFromFile("bullet.png");
 	m_hud.loadFromFile("Game HUD.png");
+	texHealthG.loadFromFile("HealthG.png");
+	texHealthY.loadFromFile("HealthY.png");
+	texHealthR.loadFromFile("HealthR.png");
 	player = Player(*&m_playerTex,sf::Vector2f(180, 140));
+	hostage = Hostage(*&m_hostageTex, sf::Vector2f(280, 260));
 	bulletManager2012 = BulletManager(*&m_bulletTex);
 	// Create the main window 
 	sf::RenderWindow window(sf::VideoMode(800, 600, 32), "SFML First Program");
@@ -787,6 +847,7 @@ int main()
 				{
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
+					bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
 					//if (soundEffectsEnabled && pressedLastFrame1 == false)
 					//{
 					//	soundManager2014.PlayBulletSound();
@@ -801,6 +862,7 @@ int main()
 					bulletCount = 0;
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
+					bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
 					//if (soundEffectsEnabled && pressedLastFrame1 == false)
 					//{
 					//	soundManager2014.PlayBulletSound();

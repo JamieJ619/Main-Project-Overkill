@@ -7,6 +7,8 @@
 #include "XboxController.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <vector>
+using namespace std;
 
 
 class Player
@@ -32,7 +34,12 @@ public:
 	void SetPosition(sf::Vector2f);
 	void SetScore(int score);
 	int GetScore();
-
+	int GetHealth();
+	void SetHealth(int);
+	std::vector<sf::Vector2f> hostagePositions;
+	std::vector<float> hostageRotations;
+	float getRotation();
+	sf::Vector2f GetHostagePos();
 
 private:
 	float m_delay;
@@ -51,6 +58,6 @@ private:
 	sf::Texture * m_tex;
 	sf::IntRect m_spriteRect;
 	sf::Sprite m_playerSprite;
-
+	int m_health;
 	int m_score;
 };
