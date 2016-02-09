@@ -60,4 +60,5 @@ private:
 	sf::Sprite m_playerSprite;
 	int m_health;
 	int m_score;
+	float m_timer;
 };

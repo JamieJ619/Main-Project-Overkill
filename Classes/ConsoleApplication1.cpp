@@ -62,7 +62,7 @@ bool pushUp = false;
 Tile tileMap[16][16];
 Enemy em1, em2, em3, em4;
 
-enum GameStates{ menuState, gameSettings, playGameState };
+enum GameStates{ menuState, gameSettings, playGameState, levelComplete };
 
 GameStates currentState = GameStates::menuState;
 sf::View viewport((player.getPosition()), sf::Vector2f(360, 280));
@@ -75,7 +75,7 @@ sf::Texture texHealthG;
 sf::Texture texHealthY;
 sf::Texture texHealthR;
 
-//SoundManager soundManager2014;
+SoundManager soundManager2014;
 
 sf::Sprite sprCursor;
 sf::IntRect m_cursorRect;
@@ -120,6 +120,10 @@ sf::Texture quitGameImage;
 sf::Sprite sprSettings;
 sf::IntRect m_settingsRect;
 sf::Texture settingsImage;
+
+sf::Sprite sprLevelComplete;
+sf::IntRect lcRect;
+sf::Texture lcImage;
 
 sf::Sprite sprControls;
 sf::IntRect m_controlsRect;
@@ -170,6 +174,16 @@ void DrawMenu(sf::RenderWindow & p_window)
 	sprCursor.setTextureRect(m_cursorRect);
 	sprCursor.setPosition(cursorPosition);
 	sprCursor.setScale(0.8, 0.8);
+}
+
+void DrawLevelComplete(sf::RenderWindow & p_window)
+{
+	sprLevelComplete.setTexture(lcImage);
+	lcRect = sf::IntRect(0, 0, 800, 600);
+	sprLevelComplete.setTextureRect(lcRect);
+	sprLevelComplete.setPosition(sf::Vector2f(0, 0));
+	p_window.draw(sprLevelComplete);
+
 }
 // jamie's method for updating menu
 void UpdateMenu()
@@ -249,100 +263,111 @@ void Collisions(sf::RenderWindow &p_window)
 	sf::IntRect playerRect(player.getPosition().x - 8, player.getPosition().y - 11, 24, 24);  // size of player texture
 
 
-		// start of tile loop
-		for (int i = 0; i < 16; i++)
+	// start of tile loop
+	for (int i = 0; i < 16; i++)
+	{
+		for (int j = 0; j < 16; j++)
 		{
-			for (int j = 0; j < 16; j++)
+			if (tileMap[i][j].tex == Tile::m_texture::END)
 			{
-					if (tileMap[i][j].tex == Tile::m_texture::MAZE)
+				sf::IntRect goalRect(j * 50, i * 50, 50, 50);
+
+				if (playerRect.intersects(goalRect))
+				{
+					currentState = GameStates::levelComplete;
+				}
+			}
+			if (tileMap[i][j].tex == Tile::m_texture::MAZE)
+			{
+				sf::IntRect mazeRect(j * 50, i * 50, 50, 50);
+				// added bullet collision with walls 
+				for (int k = 0; k < bulletManager2012.m_bulletList.size(); k++)
+				{
+					if (bulletManager2012.m_bulletList.at(k).GetBulletRectangle().intersects(mazeRect))
 					{
-						sf::IntRect mazeRect(j * 50, i * 50, 50, 50);
-						// added bullet collision with walls 
-						for (int k = 0; k < bulletManager2012.m_bulletList.size(); k++)
+						bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + k);
+					}
+				}
+
+
+				if (playerRect.intersects(mazeRect))
+				{
+					// check distance from player centre and maze centre
+					//sf::Vector2f mazePos(mazeRect.left, mazeRect.top);
+					//sf::Vector2f mazeCentre(mazePos.x + 25, mazePos.y + 25);
+					//sf::Vector2f playerCentre(player.getPosition().x + 16, player.getPosition().y + 16);
+
+
+
+					float distanceX;
+
+					//distanceX = playerCentre.x - mazePos.x;
+					distanceX = (player.getPosition().x + 16) - mazeRect.left;
+					pushRight = false;
+
+					if (distanceX > 5)  // ie must have been coming from right side to left 
+					{
+						distanceX = playerRect.left - (mazeRect.left + 50);
+						pushRight = true;
+					}
+					if (distanceX < 0)
+					{
+						distanceX = distanceX * -1;   // if negative, multiply by -1 to get a positive value
+					}
+
+					// check x and y seperately
+					float pushBackDistX; // distance between current player and ideal distance , ie distance to push back
+					pushBackDistX = distanceX;
+
+
+					float distanceY;
+					distanceY = (player.getPosition().y + 12) - mazeRect.top;
+					pushUp = false;
+
+					if (distanceY > 5)  // ie must be coming from bottom to top
+					{
+						distanceY = playerRect.top - (mazeRect.top + 50);
+						pushUp = true;
+					}
+
+
+
+					if (distanceY < 0)
+					{
+						distanceY = distanceY * -1;   // if negative, multipy by -1 to get a positive value
+					}
+
+					float pushBackDistY;
+					pushBackDistY = distanceY;
+
+					if (pushBackDistX < pushBackDistY)
+					{
+						if (pushRight == true)
 						{
-							if (bulletManager2012.m_bulletList.at(k).GetBulletRectangle().intersects(mazeRect))
-							{
-								bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + k);
-							}
+							player.SetPosition(sf::Vector2f(player.getPosition().x + pushBackDistX, player.getPosition().y));  // collide right
 						}
-						if (playerRect.intersects(mazeRect))
+						else
 						{
-							// check distance from player centre and maze centre
-							//sf::Vector2f mazePos(mazeRect.left, mazeRect.top);
-							//sf::Vector2f mazeCentre(mazePos.x + 25, mazePos.y + 25);
-							//sf::Vector2f playerCentre(player.getPosition().x + 16, player.getPosition().y + 16);
+							player.SetPosition(sf::Vector2f(player.getPosition().x - pushBackDistX, player.getPosition().y));  // collide left
+						}
+					}
 
 
-
-							float distanceX;
-
-							//distanceX = playerCentre.x - mazePos.x;
-							distanceX = (player.getPosition().x + 16) - mazeRect.left;
-							pushRight = false;
-
-							if (distanceX > 5)  // ie must have been coming from right side to left 
-							{
-								distanceX = playerRect.left - (mazeRect.left + 50);
-								pushRight = true;
-							}
-							if (distanceX < 0)
-							{
-								distanceX = distanceX * -1;   // if negative, multiply by -1 to get a positive value
-							}
-
-							// check x and y seperately
-							float pushBackDistX; // distance between current player and ideal distance , ie distance to push back
-							pushBackDistX = distanceX;
-
-
-							float distanceY;
-							distanceY = (player.getPosition().y + 12) - mazeRect.top;
-							pushUp = false;
-
-							if (distanceY > 5)  // ie must be coming from bottom to top
-							{
-								distanceY = playerRect.top - (mazeRect.top + 50);
-								pushUp = true;
-							}
-
-
-
-							if (distanceY < 0)
-							{
-								distanceY = distanceY * -1;   // if negative, multipy by -1 to get a positive value
-							}
-
-							float pushBackDistY;
-							pushBackDistY = distanceY;
-
-							if (pushBackDistX < pushBackDistY)
-							{
-								if (pushRight == true)
-								{
-									player.SetPosition(sf::Vector2f(player.getPosition().x + pushBackDistX, player.getPosition().y));  // collide right
-								}
-								else
-								{
-									player.SetPosition(sf::Vector2f(player.getPosition().x - pushBackDistX, player.getPosition().y));  // collide left
-								}
-							}
-
-
-							if (pushBackDistX > pushBackDistY)
-							{
-								if (pushUp == true)
-								{
-									player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y + pushBackDistY));  // collide up
-								}
-								else
-								{
-									player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y - pushBackDistY));  // collide down
-								}
-							}
+					if (pushBackDistX > pushBackDistY)
+					{
+						if (pushUp == true)
+						{
+							player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y + pushBackDistY));  // collide up
+						}
+						else
+						{
+							player.SetPosition(sf::Vector2f(player.getPosition().x, player.getPosition().y - pushBackDistY));  // collide down
 						}
 					}
 				}
 			}
+		}
+	}
 
 
 			///////////////////////////////////////////////////////////////////////////////////////
@@ -520,12 +545,12 @@ void Update(sf::RenderWindow &p_window)
 		p_window.draw(sprSettingsScreen);
 		p_window.draw(sprControls);
 		break;
+
+	case levelComplete:
+		DrawLevelComplete(p_window);
 	}
-	//soundManager2014.Update(player.getPosition(), player.getVelocity());
+	soundManager2014.Update(player.getPosition(), player.getVelocity());
 }
-
-
-
 // Load the first level
 /////////////////////////
 void LoadFirstLevel()
@@ -665,7 +690,6 @@ void LoadFirstLevel()
 		tileMap[2][10].tex = Tile::m_texture::MAZE;
 		tileMap[2][11].tex = Tile::m_texture::MAZE;
 }
-
 ////////////////////////////////////////////////////////////
 ///Entrypoint of application 
 //////////////////////////////////////////////////////////// 
@@ -679,7 +703,9 @@ int main()
 	texHealthG.loadFromFile("HealthG.png");
 	texHealthY.loadFromFile("HealthY.png");
 	texHealthR.loadFromFile("HealthR.png");
-	player = Player(*&m_playerTex,sf::Vector2f(180, 140));
+	lcImage.loadFromFile("LevelComplete.png");
+
+	player = Player(*&m_playerTex, sf::Vector2f(75, 75));
 	hostage = Hostage(*&m_hostageTex, sf::Vector2f(280, 260));
 	bulletManager2012 = BulletManager(*&m_bulletTex);
 	// Create the main window 
@@ -726,9 +752,9 @@ int main()
 	quitGameImage.loadFromFile("QuitGame.png");
 	settingsImage.loadFromFile("Settings.png");
 	cursorImage.loadFromFile("cursor.png");
-	//soundManager2014 = SoundManager();
-	//soundManager2014.Inititialise();
-	//soundManager2014.PlayBackgroundMusic();
+	soundManager2014 = SoundManager();
+	soundManager2014.Inititialise();
+	soundManager2014.PlayBackgroundMusic();
 	cursorPosition = sf::Vector2f(50, 500);
 
 	//soundManager2014.PlayGameMusic();  // this was commented out on jamie's edition
@@ -776,12 +802,12 @@ int main()
 		{
 			if (backgroundMusicEnabled == true && pressedLastFrame == false)
 			{
-				//soundManager2014.PauseMusic();
+				soundManager2014.PauseMusic();
 				backgroundMusicEnabled = false;
 			}
 			else if (pressedLastFrame == false && backgroundMusicEnabled == false)
 			{
-				//soundManager2014.UnPauseMusic();
+				soundManager2014.UnPauseMusic();
 				backgroundMusicEnabled = true;
 			}
 
@@ -794,19 +820,19 @@ int main()
 
 		if (sf::Joystick::isButtonPressed(0, 3) && selectedButton == newGame) //"Y" button on the XBox 360 controller
 		{
-			//if (soundManager2014.enable3dAudio == true)
-			//{
-			//	soundManager2014.enable3dAudio = false;
-			//	soundManager2014.dopplerEnabaled = false;
-			//}
+			if (soundManager2014.enable3dAudio == true)
+			{
+				soundManager2014.enable3dAudio = false;
+				soundManager2014.dopplerEnabaled = false;
+			}
 
 
-			//else if (soundManager2014.enable3dAudio == false)
-			//{
-			//	soundManager2014.enable3dAudio = true;
-			//	soundManager2014.dopplerEnabaled = true;
-			//
-			//}
+			else if (soundManager2014.enable3dAudio == false)
+			{
+				soundManager2014.enable3dAudio = true;
+				soundManager2014.dopplerEnabaled = true;
+
+			}
 
 		}
 
@@ -816,8 +842,8 @@ int main()
 		}
 		if (sf::Joystick::isButtonPressed(0, 0) && selectedButton == newGame) //"A" button on the XBox 360 controller
 		{
-			//soundManager2014.StopSound();
-			//soundManager2014.PlayZombieSound();
+			soundManager2014.StopSound();
+			soundManager2014.PlayZombieSound();
 			currentState = GameStates::playGameState;
 			pressBtn = true;
 		}
@@ -847,11 +873,14 @@ int main()
 				{
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
-					bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
-					//if (soundEffectsEnabled && pressedLastFrame1 == false)
-					//{
-					//	soundManager2014.PlayBulletSound();
-					//}
+					if (hostage.getRescue() == true)
+					{
+						bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
+					}
+					if (soundEffectsEnabled && pressedLastFrame1 == false)
+					{
+						soundManager2014.PlayBulletSound();
+					}
 
 					timer = 0;
 					reloadingSound = true;
@@ -862,11 +891,14 @@ int main()
 					bulletCount = 0;
 					bulletCount++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
-					bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
-					//if (soundEffectsEnabled && pressedLastFrame1 == false)
-					//{
-					//	soundManager2014.PlayBulletSound();
-					//}
+					if (hostage.getRescue() == true)
+					{
+						bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
+					}
+					if (soundEffectsEnabled && pressedLastFrame1 == false)
+					{
+						soundManager2014.PlayBulletSound();
+					}
 				}
 
 				else if (timer < RELOADDELAY && soundEffectsEnabled)
@@ -927,7 +959,12 @@ int main()
 
 		Update(window);  // do collisions after update and before draw
 
-
+		
+		if (currentState == GameStates::levelComplete)
+		{
+			viewport = window.getDefaultView();
+			window.setView(viewport);
+		}
 
 		// player's collision box, un comment to see 
 		/*	sf::RectangleShape rect;
