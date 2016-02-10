@@ -24,6 +24,7 @@ Player::Player(sf::Texture& p_tex, sf::Vector2f p_pos)
 	m_alive = true;
 	m_score = 0;
 	m_health = 100;
+	m_bullets = 12;
 }
 
 Player::~Player()
@@ -144,4 +145,14 @@ float Player::getRotation()
 sf::Vector2f Player::GetHostagePos()
 {
 	return hostagePositions.at(0);
+}
+
+void Player::SetBullets(int bullets)
+{
+	m_bullets = bullets;
+}
+
+int Player::GetBullets()
+{
+	return m_bullets;
 }

@@ -48,7 +48,7 @@ sf::Sprite sprHud;
 sf::Sprite sprMaze;
 sf::Sprite sprEnd;
 float timer = 0;
-int bulletCount = 0;
+int bulletsFired = 0;
 sf::IntRect m_spriteRect;
 const float BULLETDELAY = 0.3f;
 const float RELOADDELAY = 0.8f;
@@ -56,18 +56,18 @@ const float RELOADDELAY = 0.8f;
 float timeSeconds = 0;
 int timeMins = 0;
 
-int bulletCounter = 0;
+int bulletCounterForLevelCompleteText = 0;
 int enemiesKilled = 0;
 int friendliesSaved = 0;
-int bulletsRemaining = 10;
+int bulletsRemainingInHud = 6;
 
 bool pushRight = false;
 bool pushUp = false;
 
 Tile tileMap[16][16];
-Enemy em1, em2, em3, em4;
+Enemy em1, em2, em3, em5, em6, em7, em4;
 
-enum GameStates{ menuState, gameSettings, playGameState, levelComplete };
+enum GameStates{ menuState, gameSettings, playGameState, levelComplete, gameOver };
 
 GameStates currentState = GameStates::menuState;
 sf::View viewport((player.getPosition()), sf::Vector2f(360, 280));
@@ -130,6 +130,10 @@ sf::Sprite sprLevelComplete;
 sf::IntRect lcRect;
 sf::Texture lcImage;
 
+sf::Sprite sprGameOver;
+sf::IntRect goRect;
+sf::Texture goImage;
+
 sf::Sprite sprControls;
 sf::IntRect m_controlsRect;
 sf::Texture controlsTex;
@@ -147,6 +151,7 @@ sf::Text enemiesKilledText;
 sf::Text shotsFiredText;
 sf::Text friendliesSavedText;
 
+bool saved = false;
 // jamie's draw menu method
 void DrawMenu(sf::RenderWindow & p_window)
 {
@@ -200,7 +205,7 @@ void DrawLevelComplete(sf::RenderWindow & p_window)
 	scoreText.setString(std::to_string(player.GetScore()));
 
 	shotsFiredText.setPosition(sf::Vector2f(310, 260));
-	shotsFiredText.setString(std::to_string(bulletCounter));
+	shotsFiredText.setString(std::to_string(bulletCounterForLevelCompleteText));
 
 	enemiesKilledText.setPosition(sf::Vector2f(360, 190));
 	enemiesKilledText.setString(std::to_string(enemiesKilled));
@@ -268,7 +273,7 @@ void UpdateMenu()
 }
 
 // jamie's draw settings method
-void DrawSettings(sf::RenderWindow & p_window)
+void DrawSettings(sf::RenderWindow &p_window)
 {
 	// try this here? if not make an init
 	settingsScreenImage.loadFromFile("Resources/settingsBackground.png");
@@ -284,7 +289,14 @@ void DrawSettings(sf::RenderWindow & p_window)
 	sprControls.setTextureRect(m_settingsScreenRect);
 	sprControls.setPosition(sf::Vector2f(0, 50));
 }
-
+void DrawGameOver(sf::RenderWindow &p_window)
+{
+	sprGameOver.setTexture(goImage);
+	goRect = sf::IntRect(0, 0, 800, 600);
+	sprGameOver.setTextureRect(goRect);
+	sprGameOver.setPosition(sf::Vector2f(0, 0));
+	p_window.draw(sprGameOver);
+}
 // Collision between game objects
 ///////////////////////////
 void Collisions(sf::RenderWindow &p_window)
@@ -309,6 +321,7 @@ void Collisions(sf::RenderWindow &p_window)
 				{
 					timeText.setCharacterSize(68);
 					currentState = GameStates::levelComplete;
+					int x = 0;
 				}
 			}
 			if (tileMap[i][j].tex == Tile::m_texture::MAZE)
@@ -430,6 +443,8 @@ void Collisions(sf::RenderWindow &p_window)
 						{
 							bool playerDead = false;
 							player.SetAlive(playerDead);
+
+							currentState = GameStates::gameOver;
 						}
 					}
 				}
@@ -471,6 +486,13 @@ void Collisions(sf::RenderWindow &p_window)
 
 			if (playerRect.intersects(hostageRect))
 			{
+				
+				if (!saved)
+				{
+					int temp = player.GetScore() + 250;
+					player.SetScore(temp);
+				}
+				saved = true;
 				friendliesSaved = 1;
 				hostage.setRescue(true);
 			}
@@ -568,11 +590,11 @@ void Update(sf::RenderWindow &p_window)
 				timeMins += 1;
 			}
 
-			timeText.setPosition(sf::Vector2f(player.getPosition().x - 130, player.getPosition().y - 145));
+			timeText.setPosition(sf::Vector2f(player.getPosition().x - 130, player.getPosition().y - 146));
 			timeText.setString(std::to_string(timeMins) + ":" + std::to_string((int)timeSeconds));
 
-			bulletsRemText.setPosition(sf::Vector2f(player.getPosition().x + 130, player.getPosition().y - 145));
-			bulletsRemText.setString(std::to_string(bulletsRemaining));
+			bulletsRemText.setPosition(sf::Vector2f(player.getPosition().x + 110, player.getPosition().y - 146));
+			bulletsRemText.setString(std::to_string(bulletsRemainingInHud));
 		}
 
 
@@ -588,6 +610,11 @@ void Update(sf::RenderWindow &p_window)
 
 	case levelComplete:
 		DrawLevelComplete(p_window);
+		break;
+
+	case gameOver:
+		DrawGameOver(p_window);
+		break;
 	}
 	soundManager2014.Update(player.getPosition(), player.getVelocity());
 }
@@ -744,6 +771,7 @@ int main()
 	texHealthY.loadFromFile("Resources/HealthY.png");
 	texHealthR.loadFromFile("Resources/HealthR.png");
 	lcImage.loadFromFile("Resources/LevelComplete.png");
+	goImage.loadFromFile("Resources/GameOver.png");
 
 	player = Player(*&m_playerTex, sf::Vector2f(75, 75));
 	hostage = Hostage(*&m_hostageTex, sf::Vector2f(280, 260));
@@ -821,10 +849,16 @@ int main()
 	em1 = Enemy(sprEnemy, sf::Vector2f(650, 480), 5);
 	em2 = Enemy(sprEnemy, sf::Vector2f(250, 480), 5);
 	em3 = Enemy(sprEnemy, sf::Vector2f(180, 480), 5);
+	em5 = Enemy(sprEnemy, sf::Vector2f(300, 480), 5);
+	em6 = Enemy(sprEnemy, sf::Vector2f(400, 480), 5);
+	em7 = Enemy(sprEnemy, sf::Vector2f(500, 480), 5);
 	em4 = Enemy(sprEnemy, sf::Vector2f(50000, 35000), 5);
 	enemyList.push_back(em1);
 	enemyList.push_back(em2);
 	enemyList.push_back(em3);
+	enemyList.push_back(em5);
+	enemyList.push_back(em6);
+	enemyList.push_back(em7);
 	enemyList.push_back(em4);
 
 
@@ -927,13 +961,15 @@ int main()
 			float angle = player.getAngle();
 			temp = sf::Vector2f(cos(angle), sin(angle));
 
-			if (timer > BULLETDELAY)
+			if (timer > BULLETDELAY && player.GetBullets() > 0)
 			{
-				if (bulletCount <= 9)
+				if (bulletsFired <= 5)
 				{
-					bulletCount++;
-					bulletsRemaining--;
-					bulletCounter++;
+					bulletsFired++;
+					bulletsRemainingInHud--;
+					bulletCounterForLevelCompleteText++;
+					//int bulletsLeft = player.GetBullets() -1;
+					player.SetBullets(player.GetBullets() - 1);
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
 					if (hostage.getRescue() == true)
 					{
@@ -947,12 +983,12 @@ int main()
 					timer = 0;
 					reloadingSound = true;
 				}
-
-				else if (timer > RELOADDELAY)
+			
+				else if (timer > RELOADDELAY && player.GetBullets() > 0)
 				{
-					bulletCount = 0;
-					bulletCount++;
-					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
+					bulletsFired = 0;
+					bulletsRemainingInHud = 6;
+					//bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
 					if (hostage.getRescue() == true)
 					{
 						bulletManager2012.AddBullet(hostage.getPosition(), temp, bulletManager2012.getSprite());
@@ -967,8 +1003,7 @@ int main()
 				{
 					if (reloadingSound == true)
 					{
-
-						bulletsRemaining = 10;
+						bulletsRemainingInHud = 6;
 						soundManager2014.PlayReloadSound();
 						reloadingSound = false;
 					}
@@ -1024,7 +1059,7 @@ int main()
 		Update(window);  // do collisions after update and before draw
 
 		
-		if (currentState == GameStates::levelComplete)
+		if (currentState == GameStates::levelComplete || currentState == GameStates::gameOver)
 		{
 			viewport = window.getDefaultView();
 			window.setView(viewport);

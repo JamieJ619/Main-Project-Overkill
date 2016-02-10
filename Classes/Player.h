@@ -36,6 +36,8 @@ public:
 	int GetScore();
 	int GetHealth();
 	void SetHealth(int);
+	void SetBullets(int bullets);
+	int GetBullets();
 	std::vector<sf::Vector2f> hostagePositions;
 	std::vector<float> hostageRotations;
 	float getRotation();
@@ -60,5 +62,6 @@ private:
 	sf::Sprite m_playerSprite;
 	int m_health;
 	int m_score;
+	int m_bullets;
 	float m_timer;
 };
