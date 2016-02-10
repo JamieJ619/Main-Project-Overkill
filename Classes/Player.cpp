@@ -30,7 +30,7 @@ Player::~Player()
 {
 }
 
-void Player::Update(sf::Time p_deltaTime)
+void Player::Update(sf::Time p_deltaTime, bool p_rescue)
 {
 	m_delay -= p_deltaTime.asSeconds();
 
@@ -42,14 +42,17 @@ void Player::Update(sf::Time p_deltaTime)
 		m_velocity = XboxController::Instance().GetLeftStickAxis() * m_speed * 0.0006f;
 		m_position += m_velocity;
 		m_playerSprite.setPosition(m_position);
-		if (hostagePositions.size() < 1000)
+		if (p_rescue == true)
 		{
-			hostagePositions.push_back(m_position);
-		}
-		if (hostagePositions.size() == 1000 && m_position != hostagePositions.at(0))
-		{
-			hostagePositions.erase(hostagePositions.begin());
-			hostagePositions.push_back(m_position);
+			if (hostagePositions.size() < 1000)
+			{
+				hostagePositions.push_back(m_position);
+			}
+			if (hostagePositions.size() == 1000 && m_position != hostagePositions.at(0))
+			{
+				hostagePositions.erase(hostagePositions.begin());
+				hostagePositions.push_back(m_position);
+			}
 		}
 	}
 	if (XboxController::Instance().m_rightStickEnabled)

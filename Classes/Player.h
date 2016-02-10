@@ -22,7 +22,7 @@ public:
 	Player(sf::Texture&, sf::Vector2f p_pos);
 
 
-	void Update(sf::Time p_deltaTime);
+	void Update(sf::Time p_deltaTime, bool p_rescue);
 
 	sf::Vector2f getPosition();
 	sf::Vector2f getVelocity();

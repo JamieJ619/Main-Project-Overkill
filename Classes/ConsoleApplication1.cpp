@@ -51,10 +51,15 @@ float timer = 0;
 int bulletCount = 0;
 sf::IntRect m_spriteRect;
 const float BULLETDELAY = 0.3f;
-const float RELOADDELAY = 2.5f;
+const float RELOADDELAY = 0.8f;
 
 float timeSeconds = 0;
 int timeMins = 0;
+
+int bulletCounter = 0;
+int enemiesKilled = 0;
+int friendliesSaved = 0;
+int bulletsRemaining = 10;
 
 bool pushRight = false;
 bool pushUp = false;
@@ -135,6 +140,13 @@ sf::Font font;
 sf::Text text;
 sf::Text timeText;
 
+///////	LevelComplete Text
+sf::Text scoreText;
+sf::Text bulletsRemText;
+sf::Text enemiesKilledText;
+sf::Text shotsFiredText;
+sf::Text friendliesSavedText;
+
 // jamie's draw menu method
 void DrawMenu(sf::RenderWindow & p_window)
 {
@@ -183,6 +195,27 @@ void DrawLevelComplete(sf::RenderWindow & p_window)
 	sprLevelComplete.setTextureRect(lcRect);
 	sprLevelComplete.setPosition(sf::Vector2f(0, 0));
 	p_window.draw(sprLevelComplete);
+
+	scoreText.setPosition(sf::Vector2f(200, 120));
+	scoreText.setString(std::to_string(player.GetScore()));
+
+	shotsFiredText.setPosition(sf::Vector2f(310, 260));
+	shotsFiredText.setString(std::to_string(bulletCounter));
+
+	enemiesKilledText.setPosition(sf::Vector2f(360, 190));
+	enemiesKilledText.setString(std::to_string(enemiesKilled));
+
+	friendliesSavedText.setPosition(sf::Vector2f(400, 325));
+	friendliesSavedText.setString(std::to_string(friendliesSaved));
+
+	timeText.setPosition(sf::Vector2f(290, 400));
+	timeText.setString(std::to_string(timeMins) + ":" + std::to_string((int)timeSeconds));
+
+	p_window.draw(scoreText);
+	p_window.draw(enemiesKilledText);
+	p_window.draw(shotsFiredText);
+	p_window.draw(friendliesSavedText);
+	p_window.draw(timeText);
 
 }
 // jamie's method for updating menu
@@ -238,8 +271,8 @@ void UpdateMenu()
 void DrawSettings(sf::RenderWindow & p_window)
 {
 	// try this here? if not make an init
-	settingsScreenImage.loadFromFile("settingsBackground.png");
-	controlsTex.loadFromFile("controls.png");
+	settingsScreenImage.loadFromFile("Resources/settingsBackground.png");
+	controlsTex.loadFromFile("Resources/controls.png");
 
 	sprSettingsScreen.setTexture(settingsScreenImage);
 	m_settingsScreenRect = sf::IntRect(0, 0, 800, 600);
@@ -274,6 +307,7 @@ void Collisions(sf::RenderWindow &p_window)
 
 				if (playerRect.intersects(goalRect))
 				{
+					timeText.setCharacterSize(68);
 					currentState = GameStates::levelComplete;
 				}
 			}
@@ -405,6 +439,7 @@ void Collisions(sf::RenderWindow &p_window)
 				{
 					if (bulletManager2012.m_bulletList.at(j).GetBulletRectangle().intersects(enemyRect))
 					{
+						enemiesKilled++;
 						enemyList.at(i).SetAlive(false);
 						enemyList.erase(enemyList.begin() + i);
 						bulletManager2012.m_bulletList.erase(bulletManager2012.m_bulletList.begin() + j);
@@ -427,15 +462,16 @@ void Collisions(sf::RenderWindow &p_window)
 
 			sf::IntRect hostageRect(hostage.getPosition().x - 16, hostage.getPosition().y -12, 32, 24);
 			// hostage collision box, un comment to see
-			sf::RectangleShape hostRect;
+			/*sf::RectangleShape hostRect;
 			hostRect.setPosition(sf::Vector2f(hostageRect.left, hostageRect.top));
 			hostRect.setFillColor(sf::Color::Red);
 			hostRect.setSize(sf::Vector2f(32, 24));
-			p_window.draw(hostRect);
+			p_window.draw(hostRect);*/
 
 
 			if (playerRect.intersects(hostageRect))
 			{
+				friendliesSaved = 1;
 				hostage.setRescue(true);
 			}
 			////////////////////////////////////////////////////////////////////////////////////
@@ -459,6 +495,7 @@ void Draw(sf::RenderWindow &p_window)
 
 		p_window.draw(text);
 		p_window.draw(timeText);
+		p_window.draw(bulletsRemText);
 
 		if (player.GetHealth() <= 60 && player.GetHealth() >= 30)
 		{
@@ -512,7 +549,7 @@ void Update(sf::RenderWindow &p_window)
 		if (player.GetAlive() == true && currentState == GameStates::playGameState)
 		{
 			deltaTime = myClock.restart();
-			player.Update(deltaTime);
+			player.Update(deltaTime,hostage.getRescue());
 			viewport.setCenter(player.getPosition());
 			bulletManager2012.Update(deltaTime);
 			bulletManager2012.Draw(p_window);
@@ -533,6 +570,9 @@ void Update(sf::RenderWindow &p_window)
 
 			timeText.setPosition(sf::Vector2f(player.getPosition().x - 130, player.getPosition().y - 145));
 			timeText.setString(std::to_string(timeMins) + ":" + std::to_string((int)timeSeconds));
+
+			bulletsRemText.setPosition(sf::Vector2f(player.getPosition().x + 130, player.getPosition().y - 145));
+			bulletsRemText.setString(std::to_string(bulletsRemaining));
 		}
 
 
@@ -696,14 +736,14 @@ void LoadFirstLevel()
 
 int main()
 {
-	m_playerTex.loadFromFile("playerWpistol.png");
-	m_hostageTex.loadFromFile("Hostage.png");
-	m_bulletTex.loadFromFile("bullet.png");
-	m_hud.loadFromFile("Game HUD.png");
-	texHealthG.loadFromFile("HealthG.png");
-	texHealthY.loadFromFile("HealthY.png");
-	texHealthR.loadFromFile("HealthR.png");
-	lcImage.loadFromFile("LevelComplete.png");
+	m_playerTex.loadFromFile("Resources/playerWpistol.png");
+	m_hostageTex.loadFromFile("Resources/Hostage.png");
+	m_bulletTex.loadFromFile("Resources/bullet.png");
+	m_hud.loadFromFile("Resources/Game HUD.png");
+	texHealthG.loadFromFile("Resources/HealthG.png");
+	texHealthY.loadFromFile("Resources/HealthY.png");
+	texHealthR.loadFromFile("Resources/HealthR.png");
+	lcImage.loadFromFile("Resources/LevelComplete.png");
 
 	player = Player(*&m_playerTex, sf::Vector2f(75, 75));
 	hostage = Hostage(*&m_hostageTex, sf::Vector2f(280, 260));
@@ -724,34 +764,54 @@ int main()
 	timeText.setCharacterSize(24);
 	timeText.setColor(sf::Color::Red);
 
+	bulletsRemText.setFont(font);
+	bulletsRemText.setCharacterSize(24);
+	bulletsRemText.setColor(sf::Color::Red);
+
+	scoreText.setFont(font);
+	scoreText.setCharacterSize(68);
+	scoreText.setColor(sf::Color::Red);
+
+	shotsFiredText.setFont(font);
+	shotsFiredText.setCharacterSize(68);
+	shotsFiredText.setColor(sf::Color::Red);
+
+	enemiesKilledText.setFont(font);
+	enemiesKilledText.setCharacterSize(68);
+	enemiesKilledText.setColor(sf::Color::Red);
+
+	friendliesSavedText.setFont(font);
+	friendliesSavedText.setCharacterSize(68);
+	friendliesSavedText.setColor(sf::Color::Red);
+
 	sf::Sprite sprFloor;
 	sf::Texture texFloor;
-	texFloor.loadFromFile("floor.png");
+	texFloor.loadFromFile("Resources/floor.png");
 	sprFloor.setTexture(texFloor);
 
 	sf::Texture texMaze;
-	texMaze.loadFromFile("MazeTest.png");
+	texMaze.loadFromFile("Resources/MazeTest.png");
 	sprMaze.setTexture(texMaze);
 	
 
 	sf::Texture texEnd;
-	texEnd.loadFromFile("EndGoal.png");
+	texEnd.loadFromFile("Resources/EndGoal.png");
 	sprEnd.setTexture(texEnd);
 
 
 	sf::Sprite sprEnemy;
 	sf::Texture texEnemy;
-	texEnemy.loadFromFile("ZombieTest.png");
+	texEnemy.loadFromFile("Resources/ZombieTest.png");
 	sprEnemy.setTexture(texEnemy);
 
 	// try put the init in  here..
 	// if it doesn't work put back in initMenu() method
-	menuImage.loadFromFile("UnderkillCover.png");
-	newGameImage.loadFromFile("NewGame.png");
-	loadGameImage.loadFromFile("LoadGame.png");
-	quitGameImage.loadFromFile("QuitGame.png");
-	settingsImage.loadFromFile("Settings.png");
-	cursorImage.loadFromFile("cursor.png");
+	menuImage.loadFromFile("Resources/UnderkillCover.png");
+	newGameImage.loadFromFile("Resources/NewGame.png");
+	loadGameImage.loadFromFile("Resources/LoadGame.png");
+	quitGameImage.loadFromFile("Resources/QuitGame.png");
+	settingsImage.loadFromFile("Resources/Settings.png");
+	cursorImage.loadFromFile("Resources/cursor.png");
 	soundManager2014 = SoundManager();
 	soundManager2014.Inititialise();
 	soundManager2014.PlayBackgroundMusic();
@@ -869,9 +929,11 @@ int main()
 
 			if (timer > BULLETDELAY)
 			{
-				if (bulletCount <= 10)
+				if (bulletCount <= 9)
 				{
 					bulletCount++;
+					bulletsRemaining--;
+					bulletCounter++;
 					bulletManager2012.AddBullet(player.getPosition(), temp, bulletManager2012.getSprite());
 					if (hostage.getRescue() == true)
 					{
@@ -905,7 +967,9 @@ int main()
 				{
 					if (reloadingSound == true)
 					{
-						//soundManager2014.PlayReloadSound();
+
+						bulletsRemaining = 10;
+						soundManager2014.PlayReloadSound();
 						reloadingSound = false;
 					}
 
